@@ -33,7 +33,7 @@ class AIAgentServiceTest {
     }
 
     private fun mockFunctionalStrategy(): AIAgentFunctionalStrategy<Int, Int> =
-        functionalStrategy("plusOne") { input -> input + 1 }
+        graphStrategy("plusOne") { input -> input + 1 }
 
     @Test
     fun testCompanionInvoke_graphWithTypes_buildsServiceAndCreatesAgents() = runTest {

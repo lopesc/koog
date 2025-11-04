@@ -38,7 +38,7 @@ public class AIAgentFunctionalStrategy<TInput, TOutput>(
  * and is executed within an [AIAgentFunctionalContext], producing an output of type [Output].
  * @return An instance of [AIAgentFunctionalStrategy] configured with the given loop logic and name.
  */
-public fun <Input, Output> functionalStrategy(
+public fun <Input, Output> graphStrategy(
     name: String = "funStrategy",
     func: suspend AIAgentFunctionalContext.(input: Input) -> Output
 ): AIAgentFunctionalStrategy<Input, Output> =

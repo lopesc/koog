@@ -41,7 +41,7 @@ class FunctionalAIAgentTest {
         val agent = AIAgent<String, String>(
             systemPrompt = "You are helpful",
             promptExecutor = mockLLMApi,
-            strategy = functionalStrategy { inputParam ->
+            strategy = graphStrategy { inputParam ->
                 var responses = requestLLMMultiple(inputParam)
 
                 while (responses.containsToolCalls()) {
@@ -85,7 +85,7 @@ class FunctionalAIAgentTest {
         val agent = AIAgent<String, String>(
             systemPrompt = "You are helpful",
             promptExecutor = mockLLMApi,
-            strategy = functionalStrategy { inputParam ->
+            strategy = graphStrategy { inputParam ->
                 val resp = llm.writeSession {
                     updatePrompt { user(inputParam) }
                     requestLLM()
@@ -125,7 +125,7 @@ class FunctionalAIAgentTest {
             mockLLMApi,
             OllamaModels.Meta.LLAMA_3_2,
             toolRegistry = testToolRegistry,
-            strategy = functionalStrategy { inputParam: String ->
+            strategy = graphStrategy { inputParam: String ->
                 var responses = requestLLMMultiple(inputParam)
 
                 while (responses.containsToolCalls()) {

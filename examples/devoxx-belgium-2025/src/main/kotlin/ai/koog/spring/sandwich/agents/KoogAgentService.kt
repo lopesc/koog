@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class KoogAgentService(
-    private val promptExecutor: MultiLLMPromptExecutor,
+    private val promptExecutor: PromptExecutor,
     private val spanExporters: List<SpanExporter>,
     private val buildProps: BuildProperties,
 ) {

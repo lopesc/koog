@@ -1,5 +1,7 @@
 package ai.koog.agents.features.opentelemetry.feature
 
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.singleRunStrategy
 import ai.koog.agents.core.annotation.InternalAgentsApi
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
@@ -9,6 +11,7 @@ import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.core.utils.SerializationUtils
 import ai.koog.agents.features.opentelemetry.OpenTelemetryTestAPI.assertMapsEqual
 import ai.koog.agents.features.opentelemetry.OpenTelemetryTestAPI.createAgent
@@ -22,6 +25,7 @@ import ai.koog.agents.features.opentelemetry.mock.TestGetWeatherTool
 import ai.koog.agents.features.opentelemetry.span.GenAIAgentSpan
 import ai.koog.agents.testing.tools.getMockExecutor
 import ai.koog.agents.utils.HiddenString
+import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.ResponseMetaInfo
@@ -44,6 +48,39 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+
+private fun f() {
+    val agent = AIAgent.builder()
+        .toolRegistry(
+            ToolRegistry.builder()
+                .tool(::f)
+                .tool(::f)
+                .build()
+        )
+        .graphStrategy(singleRunStrategy())
+        .prompt(
+            Prompt.builder("id")
+                .system("system")
+                .user("user")
+                .assistant("assistant")
+                .user("user")
+                .assistant("assistant")
+                .toolCall("id-1", "tool-1", "args-1")
+                .toolResult("id-1", "tool-1", "result-1")
+                .toolCall("id-2", "tool-2", "args--2")
+                .toolResult("id-2", "tool-2", "result-2")
+                .build()
+        )
+        .install(OpenTelemetry) { config ->
+            config.setVerbose(true)
+            config.addSpanExporter(MockSpanExporter())
+        }
+        .install(OpenTelemetry) { config -> // some different other feature, etc....
+            config.setVerbose(true)
+            config.addSpanExporter(MockSpanExporter())
+        }
+        .build()
+}
 
 /**
  * Tests for the OpenTelemetry feature.
@@ -573,7 +610,11 @@ class OpenTelemetryTest {
             val toolCallId = "tool-call-id"
 
             val mockExecutor = getMockExecutor(clock = testClock) {
-                mockLLMToolCall(tool = TestGetWeatherTool, args = TestGetWeatherTool.Args("Paris"), toolCallId = toolCallId) onRequestEquals userPrompt
+                mockLLMToolCall(
+                    tool = TestGetWeatherTool,
+                    args = TestGetWeatherTool.Args("Paris"),
+                    toolCallId = toolCallId
+                ) onRequestEquals userPrompt
                 mockLLMAnswer(mockResponse) onRequestContains TestGetWeatherTool.DEFAULT_PARIS_RESULT
             }
 
@@ -833,7 +874,11 @@ class OpenTelemetryTest {
             val toolCallId = "tool-call-id"
 
             val mockExecutor = getMockExecutor(clock = testClock) {
-                mockLLMToolCall(tool = TestGetWeatherTool, args = TestGetWeatherTool.Args("Paris"), toolCallId = toolCallId) onRequestEquals userPrompt
+                mockLLMToolCall(
+                    tool = TestGetWeatherTool,
+                    args = TestGetWeatherTool.Args("Paris"),
+                    toolCallId = toolCallId
+                ) onRequestEquals userPrompt
                 mockLLMAnswer(mockResponse) onRequestContains "57°F"
             }
 
@@ -1337,8 +1382,10 @@ class OpenTelemetryTest {
             }
 
             // Custom SpanAdapter that adds a test attribute to each processed span
-            val customBeforeStartAttribute = CustomAttribute(key = "test.adapter.before.start.key", value = "test-value-before-start")
-            val customBeforeFinishAttribute = CustomAttribute(key = "test.adapter.before.finish.key", value = "test-value-before-finish")
+            val customBeforeStartAttribute =
+                CustomAttribute(key = "test.adapter.before.start.key", value = "test-value-before-start")
+            val customBeforeFinishAttribute =
+                CustomAttribute(key = "test.adapter.before.finish.key", value = "test-value-before-finish")
             val adapter = object : SpanAdapter() {
                 override fun onBeforeSpanStarted(span: GenAIAgentSpan) {
                     span.addAttribute(customBeforeStartAttribute)
@@ -1429,7 +1476,11 @@ class OpenTelemetryTest {
             val tokenizer = SimpleRegexBasedTokenizer()
 
             val mockExecutor = getMockExecutor(clock = testClock, tokenizer = tokenizer) {
-                mockLLMToolCall(tool = TestGetWeatherTool, args = TestGetWeatherTool.Args("Paris"), toolCallId = toolCallId) onRequestEquals userPrompt
+                mockLLMToolCall(
+                    tool = TestGetWeatherTool,
+                    args = TestGetWeatherTool.Args("Paris"),
+                    toolCallId = toolCallId
+                ) onRequestEquals userPrompt
                 mockLLMAnswer(mockResponse) onRequestContains TestGetWeatherTool.DEFAULT_PARIS_RESULT
             }
 
@@ -1672,20 +1723,24 @@ class OpenTelemetryTest {
             expectedAttributes.size,
             actualAttributes.size,
             "Expected collection of attributes should be the same size for the span (name: $spanName)\n" +
-                "Expected: <${expectedAttributes.toList().joinToString(
-                    prefix = "\n{\n",
-                    postfix = "\n}",
-                    separator = "\n"
-                ) { pair ->
-                    "  ${pair.first}=${pair.second}"
-                }}>,\n" +
-                "Actual: <${actualAttributes.toList().joinToString(
-                    prefix = "\n{\n",
-                    postfix = "\n}",
-                    separator = "\n"
-                ) { pair ->
-                    "  ${pair.first}=${pair.second}"
-                }}>"
+                "Expected: <${
+                    expectedAttributes.toList().joinToString(
+                        prefix = "\n{\n",
+                        postfix = "\n}",
+                        separator = "\n"
+                    ) { pair ->
+                        "  ${pair.first}=${pair.second}"
+                    }
+                }>,\n" +
+                "Actual: <${
+                    actualAttributes.toList().joinToString(
+                        prefix = "\n{\n",
+                        postfix = "\n}",
+                        separator = "\n"
+                    ) { pair ->
+                        "  ${pair.first}=${pair.second}"
+                    }
+                }>"
         )
 
         actualAttributes.forEach { (actualArgName: String, actualArgValue: Any) ->

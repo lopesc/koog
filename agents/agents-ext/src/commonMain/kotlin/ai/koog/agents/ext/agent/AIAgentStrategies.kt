@@ -20,6 +20,7 @@ import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.structure.StructuredOutputConfig
+import kotlin.jvm.JvmOverloads
 
 // FIXME improve this strategy to use Message.Assistant to chat, it works better than tools
 
@@ -38,9 +39,11 @@ public fun chatAgentStrategy(): AIAgentGraphStrategy<String, String> = strategy(
         llm.writeSession {
             updatePrompt {
                 user(
-                    "Don't chat with plain text! Call one of the available tools, instead: ${tools.joinToString(", ") {
-                        it.name
-                    }}"
+                    "Don't chat with plain text! Call one of the available tools, instead: ${
+                        tools.joinToString(", ") {
+                            it.name
+                        }
+                    }"
                 )
             }
 
@@ -117,6 +120,7 @@ public fun chatAgentStrategy(): AIAgentGraphStrategy<String, String> = strategy(
  *
  * 7. Finish: Execution complete
  */
+@JvmOverloads
 public fun reActStrategy(
     reasoningInterval: Int = 1,
     name: String = "re_act"

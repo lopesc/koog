@@ -96,7 +96,7 @@ public class BedrockGuardrailsSettings(
  * @param moderationGuardrailsSettings Optional settings of the AWS bedrock Guardrails (see [AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html) ) that would be used for the [LLMClient.moderate] request
  * @return A configured [LLMClient] instance for Bedrock
  */
-public class BedrockLLMClient(
+public class BedrockLLMClient @JvmOverloads constructor(
     private val bedrockClient: BedrockRuntimeClient,
     private val moderationGuardrailsSettings: BedrockGuardrailsSettings? = null,
     private val clock: Clock = Clock.System,
@@ -437,6 +437,7 @@ public class BedrockLLMClient(
                         is ContentPart.Text -> {
                             add(GuardrailContentBlock.Text(GuardrailTextBlock { text = part.text }))
                         }
+
                         is ContentPart.Image -> {
                             GuardrailContentBlock.Image(
                                 GuardrailImageBlock {
@@ -458,6 +459,7 @@ public class BedrockLLMClient(
                                 }
                             )
                         }
+
                         else -> throw IllegalArgumentException("Unsupported attachment type: $this")
                     }
                 }

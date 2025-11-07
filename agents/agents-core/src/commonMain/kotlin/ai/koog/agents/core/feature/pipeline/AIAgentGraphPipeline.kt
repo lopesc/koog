@@ -13,6 +13,7 @@ import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedHandler
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingContext
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingHandler
 import kotlinx.datetime.Clock
+import kotlin.jvm.JvmOverloads
 import kotlin.reflect.KType
 
 /**
@@ -21,14 +22,8 @@ import kotlin.reflect.KType
  *
  * @property clock The clock used for time-based operations within the pipeline
  */
-public class AIAgentGraphPipeline(clock: Clock = Clock.System) : AIAgentPipeline(clock) {
-
-    /**
-     * Map of node execution handlers registered for different features.
-     * Keys are feature storage keys, values are node execution handlers.
-     */
-    private val executeNodeHandlers: MutableMap<AIAgentStorageKey<*>, NodeExecutionEventHandler> = mutableMapOf()
-
+@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock = Clock.System) : AIAgentPipeline {
     /**
      * Installs a feature into the pipeline with the provided configuration.
      *
@@ -43,15 +38,7 @@ public class AIAgentGraphPipeline(clock: Clock = Clock.System) : AIAgentPipeline
     public fun <TConfig : FeatureConfig, TFeature : Any> install(
         feature: AIAgentGraphFeature<TConfig, TFeature>,
         configure: TConfig.() -> Unit,
-    ) {
-        val featureConfig = feature.createInitialConfig().apply { configure() }
-        val featureImpl = feature.install(
-            config = featureConfig,
-            pipeline = this,
-        )
-
-        registeredFeatures[feature.key] = RegisteredFeature(featureImpl, featureConfig)
-    }
+    )
 
     //region Trigger Node Handlers
 

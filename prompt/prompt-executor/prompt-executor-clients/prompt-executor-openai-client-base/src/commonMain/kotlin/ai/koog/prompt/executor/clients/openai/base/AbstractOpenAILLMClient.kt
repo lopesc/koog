@@ -60,6 +60,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.jvm.JvmOverloads
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import ai.koog.prompt.executor.clients.openai.base.models.Content as OpenAIContent
@@ -86,7 +87,8 @@ public abstract class OpenAIBasedSettings(
  * @param baseClient The HTTP client to use for API requests. Defaults to a new HttpClient instance.
  * @param clock Clock instance used for tracking response metadata timestamps. Defaults to Clock.System.
  */
-public abstract class AbstractOpenAILLMClient<TResponse : OpenAIBaseLLMResponse, TStreamResponse : OpenAIBaseLLMStreamResponse>(
+public abstract class AbstractOpenAILLMClient<TResponse : OpenAIBaseLLMResponse, TStreamResponse : OpenAIBaseLLMStreamResponse>
+@JvmOverloads constructor(
     private val apiKey: String,
     settings: OpenAIBasedSettings,
     private val baseClient: HttpClient = HttpClient(),

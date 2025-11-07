@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.datetime.Clock
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.jvm.JvmOverloads
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import ai.koog.prompt.executor.clients.openai.base.models.Content as OpenAIContent
@@ -84,7 +85,7 @@ public class OpenAIClientSettings(
  * @param clock Clock instance used for tracking response metadata timestamps.
  */
 @OptIn(ExperimentalAtomicApi::class)
-public open class OpenAILLMClient(
+public open class OpenAILLMClient @JvmOverloads constructor(
     apiKey: String,
     private val settings: OpenAIClientSettings = OpenAIClientSettings(),
     baseClient: HttpClient = HttpClient(),
@@ -718,6 +719,7 @@ public open class OpenAILLMClient(
             )
             params
         }
+
         params is OpenAIChatParams -> {
             model.requireCapability(
                 LLMCapability.OpenAIEndpoint.Completions,
@@ -725,6 +727,7 @@ public open class OpenAILLMClient(
             )
             params
         }
+
         model.supports(LLMCapability.OpenAIEndpoint.Completions) -> params.toOpenAIChatParams()
         model.supports(LLMCapability.OpenAIEndpoint.Responses) -> params.toOpenAIResponsesParams()
         else -> error("Cannot determine proper LLM params for OpenAI model: ${model.id}")

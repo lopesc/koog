@@ -9,6 +9,7 @@ import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
 import kotlinx.coroutines.flow.Flow
+import kotlin.jvm.JvmOverloads
 
 /**
  * Common interface for direct communication with LLM providers.
@@ -25,6 +26,7 @@ public interface LLMClient : AutoCloseable {
      * @param tools Optional list of tools that can be used by the LLM
      * @return List of response messages
      */
+    @JvmOverloads
     public suspend fun execute(
         prompt: Prompt,
         model: LLModel,
@@ -39,6 +41,7 @@ public interface LLMClient : AutoCloseable {
      * @param tools Optional list of tools that can be used by the LLM
      * @return Flow of response chunks
      */
+    @JvmOverloads
     public fun executeStreaming(
         prompt: Prompt,
         model: LLModel,

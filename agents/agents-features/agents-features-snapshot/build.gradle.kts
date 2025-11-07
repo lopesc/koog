@@ -28,6 +28,7 @@ kotlin {
 
         jvmMain {
             dependencies {
+                api(libs.reactor.kotlin.extensions)
                 // SQL dependencies moved to agents-features-sql module
             }
         }

@@ -623,13 +623,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptLLMStreamingFrameReceived(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingFrameReceivedContext) -> Unit
-    ) {
-        val handler = llmStreamingEventHandlers.getOrPut(feature.key) { LLMStreamingEventHandler() }
-
-        handler.llmStreamingFrameReceivedHandler = LLMStreamingFrameReceivedHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts errors during the streaming process.
@@ -640,13 +634,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptLLMStreamingFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingFailedContext) -> Unit
-    ) {
-        val handler = llmStreamingEventHandlers.getOrPut(feature.key) { LLMStreamingEventHandler() }
-
-        handler.llmStreamingFailedHandler = LLMStreamingFailedHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts streaming operations after they complete to perform post-processing or cleanup.
@@ -667,13 +655,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptLLMStreamingCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingCompletedContext) -> Unit
-    ) {
-        val handler = llmStreamingEventHandlers.getOrPut(feature.key) { LLMStreamingEventHandler() }
-
-        handler.llmStreamingCompletedHandler = LLMStreamingCompletedHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts and handles tool calls for the specified feature.
@@ -691,13 +673,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCallStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallStartingContext) -> Unit
-    ) {
-        val handler = toolCallEventHandlers.getOrPut(feature.key) { ToolCallEventHandler() }
-
-        handler.toolCallHandler = ToolCallHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts validation errors encountered during the execution of tools associated with the specified feature.
@@ -715,13 +691,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolValidationFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolValidationFailedContext) -> Unit
-    ) {
-        val handler = toolCallEventHandlers.getOrPut(feature.key) { ToolCallEventHandler() }
-
-        handler.toolValidationErrorHandler = ToolValidationErrorHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Sets up an interception mechanism to handle tool call failures for a specific feature.
@@ -739,13 +709,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCallFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallFailedContext) -> Unit
-    ) {
-        val handler = toolCallEventHandlers.getOrPut(feature.key) { ToolCallEventHandler() }
-
-        handler.toolCallFailureHandler = ToolCallFailureHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts the result of a tool call with a custom handler for a specific feature.
@@ -763,13 +727,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCallCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallCompletedContext) -> Unit
-    ) {
-        val handler = toolCallEventHandlers.getOrPut(feature.key) { ToolCallEventHandler() }
-
-        handler.toolCallResultHandler = ToolCallResultHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     //endregion Interceptors
 
@@ -788,9 +746,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptBeforeAgentStarted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentStartingContext) -> Unit
-    ) {
-        interceptAgentStarting(feature, handle)
-    }
+    )
 
     /**
      * Intercepts the completion of an agent's operation and assigns a custom handler to process the result.
@@ -807,9 +763,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptAgentFinished(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: AgentCompletedContext) -> Unit
-    ) {
-        interceptAgentCompleted(feature, handle)
-    }
+    )
 
     /**
      * Intercepts and handles errors occurring during the execution of an AI agent's strategy.
@@ -826,9 +780,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptAgentRunError(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentExecutionFailedContext) -> Unit
-    ) {
-        interceptAgentExecutionFailed(feature, handle)
-    }
+    )
 
     /**
      * Intercepts and sets a handler to be invoked before an agent is closed.
@@ -845,9 +797,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptAgentBeforeClose(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentClosingContext) -> Unit
-    ) {
-        interceptAgentClosing(feature, handle)
-    }
+    )
 
     /**
      * Intercepts strategy started event to perform actions when an agent strategy begins execution.
@@ -864,9 +814,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptStrategyStart(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyStartingContext) -> Unit
-    ) {
-        interceptStrategyStarting(feature, handle)
-    }
+    )
 
     /**
      * Sets up an interceptor to handle the completion of a strategy for the given feature.
@@ -883,9 +831,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptStrategyFinished(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyCompletedContext) -> Unit
-    ) {
-        interceptStrategyCompleted(feature, handle)
-    }
+    )
 
     /**
      * Intercepts LLM calls before they are made (deprecated name).
@@ -902,9 +848,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptBeforeLLMCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallStartingContext) -> Unit
-    ) {
-        interceptLLMCallStarting(feature, handle)
-    }
+    )
 
     /**
      * Intercepts LLM calls after they are made to process or log the response.
@@ -921,9 +865,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptAfterLLMCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallCompletedContext) -> Unit
-    ) {
-        interceptLLMCallCompleted(feature, handle)
-    }
+    )
 
     /**
      * Intercepts and handles tool calls for the specified feature and its implementation.
@@ -941,9 +883,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallStartingContext) -> Unit
-    ) {
-        interceptToolCallStarting(feature, handle)
-    }
+    )
 
     /**
      * Intercepts the result of a tool call with a custom handler for a specific feature.
@@ -960,9 +900,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCallResult(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallCompletedContext) -> Unit
-    ) {
-        interceptToolCallCompleted(feature, handle)
-    }
+    )
 
     /**
      * Sets up an interception mechanism to handle tool call failures for a specific feature.
@@ -979,9 +917,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolCallFailure(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallFailedContext) -> Unit
-    ) {
-        interceptToolCallFailed(feature, handle)
-    }
+    )
 
     /**
      * Intercepts validation errors encountered during the execution of tools associated with the specified feature.
@@ -998,9 +934,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     public fun interceptToolValidationError(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolValidationFailedContext) -> Unit
-    ) {
-        interceptToolValidationFailed(feature, handle)
-    }
+    )
 
     //endregion Deprecated Interceptors
 
@@ -1009,33 +943,14 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
     protected inline fun <TContext : AgentLifecycleEventContext> createConditionalHandler(
         feature: AIAgentFeature<*, *>,
         crossinline handle: suspend (TContext) -> Unit
-    ): suspend (TContext) -> Unit = handler@{ eventContext ->
-        val featureConfig = registeredFeatures[feature.key]?.featureConfig
-
-        if (featureConfig != null && !featureConfig.isAccepted(eventContext)) {
-            return@handler
-        }
-
-        handle(eventContext)
-    }
+    ): suspend (TContext) -> Unit
 
     protected inline fun createConditionalHandler(
         feature: AIAgentFeature<*, *>,
         crossinline handle: suspend AgentEnvironmentTransformingContext.(AIAgentEnvironment) -> AIAgentEnvironment
-    ): suspend (AgentEnvironmentTransformingContext, AIAgentEnvironment) -> AIAgentEnvironment =
-        handler@{ eventContext, env ->
-            val featureConfig = registeredFeatures[feature.key]?.featureConfig
+    ): suspend (AgentEnvironmentTransformingContext, AIAgentEnvironment) -> AIAgentEnvironment
 
-            if (featureConfig != null && !featureConfig.isAccepted(eventContext)) {
-                return@handler env
-            }
-
-            eventContext.handle(env)
-        }
-
-    protected fun FeatureConfig.isAccepted(eventContext: AgentLifecycleEventContext): Boolean {
-        return this.eventFilter.invoke(eventContext)
-    }
+    protected fun FeatureConfig.isAccepted(eventContext: AgentLifecycleEventContext): Boolean
 
     //endregion Private Methods
 }

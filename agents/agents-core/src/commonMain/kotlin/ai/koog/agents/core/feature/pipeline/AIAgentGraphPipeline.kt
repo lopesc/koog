@@ -55,10 +55,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
         context: AIAgentContext,
         input: Any?,
         inputType: KType
-    ) {
-        val eventContext = NodeExecutionStartingContext(node, context, input, inputType)
-        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionStartingHandler.handle(eventContext) }
-    }
+    )
 
     /**
      * Notifies all registered node handlers after a node has been executed.
@@ -77,10 +74,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
         output: Any?,
         inputType: KType,
         outputType: KType,
-    ) {
-        val eventContext = NodeExecutionCompletedContext(node, context, input, output, inputType, outputType)
-        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionCompletedHandler.handle(eventContext) }
-    }
+    )
 
     /**
      * Handles errors occurring during the execution of a node by invoking all registered node execution error handlers.
@@ -97,10 +91,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
         input: Any?,
         inputType: KType,
         throwable: Throwable
-    ) {
-        val eventContext = NodeExecutionFailedContext(node, context, input, inputType, throwable)
-        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionFailedHandler.handle(eventContext) }
-    }
+    )
 
     //endregion Trigger Node Handlers
 
@@ -122,13 +113,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
     public fun interceptNodeExecutionStarting(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionStartingContext) -> Unit
-    ) {
-        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
-
-        handler.nodeExecutionStartingHandler = NodeExecutionStartingHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts node execution after it completes.
@@ -146,13 +131,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
     public fun interceptNodeExecutionCompleted(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionCompletedContext) -> Unit
-    ) {
-        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
-
-        handler.nodeExecutionCompletedHandler = NodeExecutionCompletedHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     /**
      * Intercepts and handles node execution errors for a given feature.
@@ -170,13 +149,7 @@ public expect class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock 
     public fun interceptNodeExecutionFailed(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionFailedContext) -> Unit
-    ) {
-        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
-
-        handler.nodeExecutionFailedHandler = NodeExecutionFailedHandler(
-            function = createConditionalHandler(feature, handle)
-        )
-    }
+    )
 
     //endregion Interceptors
 }

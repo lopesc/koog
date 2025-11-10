@@ -1,5 +1,6 @@
 package ai.koog.agents.core.agent
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.agent.AIAgent.Companion.State.Finished
 import ai.koog.agents.core.agent.AIAgent.Companion.State.Running
 import ai.koog.agents.core.agent.GraphAIAgent.FeatureContext
@@ -426,6 +427,7 @@ public interface AIAgent<Input, Output> : Closeable {
      * components of an AI agent. This builder enables fine-grained control over tools, strategies,
      * and prompts utilized by an AI agent during its execution.
      */
+    @JavaAPI
     public class Builder internal constructor() {
         /**
          * Represents the `PromptExecutor` instance to be utilized within the builder.
@@ -541,16 +543,23 @@ public interface AIAgent<Input, Output> : Closeable {
          * and interacting with language models.
          * @return The current instance of the `Builder` for chaining additional configurations.
          */
+        @JavaAPI
         public fun promptExecutor(promptExecutor: PromptExecutor): Builder = apply {
             AIAgentConfig
             this.promptExecutor = promptExecutor
         }
 
         /**
-         * Sets the specified Large Language Model (LLM) to be used by the builder.
+         * Sets the `LLModel` instance to be used by the builder.
          *
-         * @param model The instance of [LLModel] representing the Large Language Model to be set for the builder.
-         * @return The current instance of*/
+         * This method configures the builder with a specified Large Language Model (LLM),
+         * representing the model's provider, identifier, capabilities, and constraints such as
+         * context length or maximum output tokens.
+         *
+         * @param model The [LLModel] instance representing the large language model to set.
+         * @return The current instance of the `Builder` for chaining additional configurations.
+         */
+        @JavaAPI
         public fun llmModel(model: LLModel): Builder = apply {
             this.llmModel = model
         }
@@ -561,6 +570,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param toolRegistry The instance of `ToolRegistry` to be used in the builder.
          * @return The current instance of the `Builder` for chaining further configurations.
          */
+        @JavaAPI
         public fun toolRegistry(toolRegistry: ToolRegistry): Builder = apply {
             this.toolRegistry = toolRegistry
         }
@@ -579,6 +589,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @return An instance of `GraphAgentBuilder` configured with the specified input type,
          * output type, and strategy.
          */
+        @JavaAPI
         public fun <Input, Output> graphStrategy(
             strategy: AIAgentGraphStrategy<Input, Output>
         ): GraphAgentBuilder<Input, Output> = GraphAgentBuilder(
@@ -608,6 +619,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * used by the AI agent for decision-making or execution processes.
          * @return An instance of [FunctionalAgentBuilder] configured with the provided functional strategy.
          */
+        @JavaAPI
         public fun <Input, Output> functionalStrategy(
             strategy: AIAgentFunctionalStrategy<Input, Output>
         ): FunctionalAgentBuilder<Input, Output> = FunctionalAgentBuilder(
@@ -628,6 +640,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param id The identifier string to be set. Can be null.
          * @return The current instance of the builder for chaining method calls.
          */
+        @JavaAPI
         public fun id(id: String?): Builder = apply {
             this.id = id
         }
@@ -641,6 +654,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param systemPrompt The content of the system message to set as the prompt.
          * @return The current instance of the builder with the updated system prompt.
          */
+        @JavaAPI
         public fun systemPrompt(systemPrompt: String): Builder = apply {
             this.prompt = prompt(id = "agent") { system(systemPrompt) }
         }
@@ -651,6 +665,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param prompt The [Prompt] instance to set.
          * @return The current instance of the builder.
          */
+        @JavaAPI
         public fun prompt(prompt: Prompt): Builder = apply {
             this.prompt = prompt
         }
@@ -665,15 +680,22 @@ public interface AIAgent<Input, Output> : Closeable {
          *                     the range [0.0, 1.0].
          * @return The current instance of the Builder for method chaining.
          */
+        @JavaAPI
         public fun temperature(temperature: Double): Builder = apply {
             this.temperature = temperature
         }
 
         /**
-         * Sets the number of choices for the builder configuration.
+         * Sets the number of choices to be utilized by the builder instance.
          *
-         * @param numberOfChoices The desired number of choices to be set.
-         * @return The builder instance with*/
+         * This method configures the builder with a specified number of discrete choices,
+         * which could be utilized in the decision-making process or output generation.
+         *
+         * @param numberOfChoices The integer representing the number of choices to configure.
+         *                        Must be a positive value.
+         * @return The current instance of the `Builder` for chaining additional configurations.
+         */
+        @JavaAPI
         public fun numberOfChoices(numberOfChoices: Int): Builder = apply {
             this.numberOfChoices = numberOfChoices
         }
@@ -683,6 +705,7 @@ public interface AIAgent<Input, Output> : Closeable {
          *
          * @param maxIterations The maximum number of iterations to be used. Must be a positive integer.
          * @return The current instance of the*/
+        @JavaAPI
         public fun maxIterations(maxIterations: Int): Builder = apply {
             this.maxIterations = maxIterations
         }
@@ -699,6 +722,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param configure A lambda function to configure the feature's properties and behavior.
          * @return An instance of [GraphAgentBuilder] configured with the installed feature.
          */
+        @JavaAPI
         public fun <TConfig : FeatureConfig> install(
             feature: AIAgentGraphFeature<TConfig, *>,
             configure: ConfigureAction<TConfig>
@@ -731,6 +755,7 @@ public interface AIAgent<Input, Output> : Closeable {
          *
          * @return An instance of [AIAgent] with the configured input and output types as `String`.
          */
+        @JavaAPI
         public fun build(): AIAgent<String, String> {
             return AIAgent(
                 promptExecutor = requireNotNull(promptExecutor) { "promptExecutor must be set" },
@@ -758,6 +783,7 @@ public interface AIAgent<Input, Output> : Closeable {
      * @param inputType The [KType] representation of the input parameter type.
      * @param outputType The [KType] representation of the output parameter type.
      */
+    @JavaAPI
     public class GraphAgentBuilder<Input, Output>(
         private val strategy: AIAgentGraphStrategy<Input, Output>,
         private val inputType: KType,
@@ -783,6 +809,7 @@ public interface AIAgent<Input, Output> : Closeable {
          *                        and interacting with the language model.
          * @return The current instance of `GraphAgentBuilder` for method chaining.
          */
+        @JavaAPI
         public fun promptExecutor(promptExecutor: PromptExecutor): GraphAgentBuilder<Input, Output> = apply {
             this.promptExecutor = promptExecutor
         }
@@ -793,6 +820,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param model The `LLModel` instance representing the large language model to be used by the agent.
          * @return The current instance of `GraphAgentBuilder<Input, Output>` for method chaining.
          */
+        @JavaAPI
         public fun llmModel(model: LLModel): GraphAgentBuilder<Input, Output> = apply {
             this.llmModel = model
         }
@@ -803,6 +831,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param toolRegistry The `ToolRegistry` instance to be associated with the `GraphAgentBuilder`.
          * @return The current instance of `GraphAgentBuilder` with the updated `toolRegistry`.
          */
+        @JavaAPI
         public fun toolRegistry(toolRegistry: ToolRegistry): GraphAgentBuilder<Input, Output> = apply {
             this.toolRegistry = toolRegistry
         }
@@ -813,6 +842,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param id The unique identifier to associate with the agent. Can be null if no identifier is required.
          * @return The current instance of `GraphAgentBuilder` with the updated identifier.
          */
+        @JavaAPI
         public fun id(id: String?): GraphAgentBuilder<Input, Output> = apply {
             this.id = id
         }
@@ -826,6 +856,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param systemPrompt The system-level instructions or context for the agent.
          * @return The updated instance of GraphAgentBuilder with the system prompt applied.
          */
+        @JavaAPI
         public fun systemPrompt(systemPrompt: String): GraphAgentBuilder<Input, Output> = apply {
             this.prompt = prompt(id = "agent") { system(systemPrompt) }
         }
@@ -836,6 +867,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param prompt The prompt configuration to be set.
          * @return The updated instance of GraphAgentBuilder.
          */
+        @JavaAPI
         public fun prompt(prompt: Prompt): GraphAgentBuilder<Input, Output> = apply {
             this.prompt = prompt
         }
@@ -849,6 +881,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param temperature The temperature value to be set, typically ranging between 0.0 and 1.0.
          * @return The current instance of [GraphAgentBuilder], allowing method chaining.
          */
+        @JavaAPI
         public fun temperature(temperature: Double): GraphAgentBuilder<Input, Output> = apply {
             this.temperature = temperature
         }
@@ -859,6 +892,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param numberOfChoices The number of choices to configure for the agent.
          * @return The updated instance of the GraphAgentBuilder with the specified number of choices.
          */
+        @JavaAPI
         public fun numberOfChoices(numberOfChoices: Int): GraphAgentBuilder<Input, Output> = apply {
             this.numberOfChoices = numberOfChoices
         }
@@ -869,6 +903,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param maxIterations The maximum number of iterations to configure.
          * @return The current instance of [GraphAgentBuilder] for method chaining.
          */
+        @JavaAPI
         public fun maxIterations(maxIterations: Int): GraphAgentBuilder<Input, Output> = apply {
             this.maxIterations = maxIterations
         }
@@ -881,6 +916,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param configure A lambda used to customize the configuration of the feature.
          * @return The current [GraphAgentBuilder] instance, enabling further configurations.
          */
+        @JavaAPI
         public fun <TConfig : FeatureConfig> install(
             feature: AIAgentGraphFeature<TConfig, *>,
             configure: ConfigureAction<TConfig>
@@ -899,6 +935,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @return an instance of `AIAgent` initialized with the specified input and output types,
          *         strategy, tool registry, prompt executor, model configuration, and other optional settings.
          */
+        @JavaAPI
         public fun build(): AIAgent<Input, Output> {
             return GraphAIAgent(
                 inputType = inputType,
@@ -944,6 +981,7 @@ public interface AIAgent<Input, Output> : Closeable {
      * @property clock The clock instance used for time-related functionality, default is `Clock.System`.
      * @property featureInstallers A list of feature installation lambdas defining additional functionalities the agent should have.
      */
+    @JavaAPI
     public class FunctionalAgentBuilder<Input, Output>(
         private val strategy: AIAgentFunctionalStrategy<Input, Output>,
         private var promptExecutor: PromptExecutor? = null,
@@ -966,6 +1004,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param promptExecutor The `PromptExecutor` instance to be used for executing prompts.
          * @return The updated `FunctionalAgentBuilder` instance with the specified prompt executor configuration.
          */
+        @JavaAPI
         public fun promptExecutor(promptExecutor: PromptExecutor): FunctionalAgentBuilder<Input, Output> = apply {
             this.promptExecutor = promptExecutor
         }
@@ -976,6 +1015,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param model The Large Language Model (LLM) instance to be used, which defines the provider, identifier, and capabilities.
          * @return The updated instance of [FunctionalAgentBuilder] for further configuration chaining.
          */
+        @JavaAPI
         public fun llmModel(model: LLModel): FunctionalAgentBuilder<Input, Output> = apply {
             this.llmModel = model
         }
@@ -986,6 +1026,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param toolRegistry The ToolRegistry instance to be associated with this builder.
          * @return The current FunctionalAgentBuilder instance to allow method chaining.
          */
+        @JavaAPI
         public fun toolRegistry(toolRegistry: ToolRegistry): FunctionalAgentBuilder<Input, Output> = apply {
             this.toolRegistry = toolRegistry
         }
@@ -996,6 +1037,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param id The unique identifier as a nullable string. It can be used to reference the agent in various contexts or hierarchies.
          * @return The builder instance, allowing for method chaining during the configuration of the FunctionalAgent.
          */
+        @JavaAPI
         public fun id(id: String?): FunctionalAgentBuilder<Input, Output> = apply {
             this.id = id
         }
@@ -1007,6 +1049,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param systemPrompt The message that defines the behavior or context for the agent.
          * @return The instance of FunctionalAgentBuilder with the updated system-level prompt.
          */
+        @JavaAPI
         public fun systemPrompt(systemPrompt: String): FunctionalAgentBuilder<Input, Output> = apply {
             this.prompt = prompt(id = "agent") { system(systemPrompt) }
         }
@@ -1017,6 +1060,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param prompt The prompt to be used by the agent.
          * @return The current instance of FunctionalAgentBuilder with the updated prompt.
          */
+        @JavaAPI
         public fun prompt(prompt: Prompt): FunctionalAgentBuilder<Input, Output> = apply {
             this.prompt = prompt
         }
@@ -1028,6 +1072,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param temperature The temperature value to be used. It should typically range between 0.0 and 1.0.
          * @return The updated instance of the FunctionalAgentBuilder with the temperature parameter set.
          */
+        @JavaAPI
         public fun temperature(temperature: Double): FunctionalAgentBuilder<Input, Output> = apply {
             this.temperature = temperature
         }
@@ -1038,6 +1083,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param numberOfChoices The desired number of choices to configure for the functional agent.
          * @return The updated instance of [FunctionalAgentBuilder] configured with the specified number of choices.
          */
+        @JavaAPI
         public fun numberOfChoices(numberOfChoices: Int): FunctionalAgentBuilder<Input, Output> = apply {
             this.numberOfChoices = numberOfChoices
         }
@@ -1048,6 +1094,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param maxIterations The maximum number of iterations to be set.
          * @return The current instance of FunctionalAgentBuilder with the updated maximum iterations.
          */
+        @JavaAPI
         public fun maxIterations(maxIterations: Int): FunctionalAgentBuilder<Input, Output> = apply {
             this.maxIterations = maxIterations
         }
@@ -1060,6 +1107,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @param configure a lambda function to customize the configuration of the feature, where the provided [TConfig] can be modified.
          * @return the current [FunctionalAgentBuilder] instance for chaining further configurations.
          */
+        @JavaAPI
         public fun <TConfig : FeatureConfig> install(
             feature: AIAgentFunctionalFeature<TConfig, *>,
             configure: ConfigureAction<TConfig>
@@ -1079,6 +1127,7 @@ public interface AIAgent<Input, Output> : Closeable {
          * @return an instance of `AIAgent<Input, Output>` created using the provided configuration.
          * @throws IllegalArgumentException if required fields, such as `promptExecutor` or `llmModel`, are not set.
          */
+        @JavaAPI
         public fun build(): AIAgent<Input, Output> {
             return FunctionalAIAgent(
                 strategy = strategy,

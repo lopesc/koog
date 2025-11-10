@@ -62,6 +62,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlin.jvm.JvmOverloads
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.safeCast
@@ -84,70 +85,7 @@ import kotlin.reflect.safeCast
  * @param clock Clock instance for time-related operations
  */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-public expect abstract class AIAgentPipeline(clock: Clock) {
-    /**
-     * Instance of the [Clock]
-     * */
-    public val clock: Clock
-
-
-    /**
-     * Represents configured and installed agent feature implementation along with its configuration.
-     * @param featureImpl The feature implementation
-     * @param featureConfig The feature configuration
-     */
-    @Suppress("RedundantVisibilityModifier") // have to put public here, explicitApi requires it
-    protected class RegisteredFeature(
-        featureImpl: Any,
-        featureConfig: FeatureConfig
-    ) {
-        /**
-         * The feature implementation
-         * */
-        public val featureImpl: Any
-
-        /**
-         * The feature configuration
-         * */
-        public val featureConfig: FeatureConfig
-    }
-
-    /**
-     * Map of registered features and their configurations.
-     * Keys are feature storage keys, values are feature configurations.
-     */
-    protected val registeredFeatures: MutableMap<AIAgentStorageKey<*>, RegisteredFeature>
-
-    /**
-     * Map of agent handlers registered for different features.
-     * Keys are feature storage keys, values are agent handlers.
-     */
-    protected val agentEventHandlers: MutableMap<AIAgentStorageKey<*>, AgentEventHandler>
-
-    /**
-     * Map of strategy handlers registered for different features.
-     * Keys are feature storage keys, values are strategy handlers.
-     */
-    protected val strategyEventHandlers: MutableMap<AIAgentStorageKey<*>, StrategyEventHandler>
-
-    /**
-     * Map of tool execution handlers registered for different features.
-     * Keys are feature storage keys, values are tool execution handlers.
-     */
-    protected val toolCallEventHandlers: MutableMap<AIAgentStorageKey<*>, ToolCallEventHandler>
-
-    /**
-     * Map of LLM execution handlers registered for different features.
-     * Keys are feature storage keys, values are LLM execution handlers.
-     */
-    protected val llmCallEventHandlers: MutableMap<AIAgentStorageKey<*>, LLMCallEventHandler>
-
-    /**
-     * Map of feature storage keys to their stream handlers.
-     * These handlers manage the streaming lifecycle events (before, during, and after streaming).
-     */
-    protected val llmStreamingEventHandlers: MutableMap<AIAgentStorageKey<*>, LLMStreamingEventHandler>
-
+public expect abstract class AIAgentPipeline @JvmOverloads constructor(clock: Clock) {
     /**
      * Retrieves a feature implementation from the current pipeline using the specified [feature], if it is registered.
      *
@@ -157,7 +95,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @return The feature associated with the provided key, or null if no matching feature is found.
      * @throws IllegalArgumentException if the specified [featureClass] does not correspond to a registered feature.
      */
-    public fun <TFeature : Any> feature(
+    public open fun <TFeature : Any> feature(
         featureClass: KClass<TFeature>,
         feature: AIAgentFeature<*, TFeature>
     ): TFeature?
@@ -172,7 +110,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param context The context of the agent execution, providing access to the agent environment and context features
      */
     @OptIn(InternalAgentsApi::class)
-    public suspend fun <TInput, TOutput> onAgentStarting(
+    public open suspend fun <TInput, TOutput> onAgentStarting(
         runId: String,
         agent: AIAgent<*, *>,
         context: AIAgentContext
@@ -185,7 +123,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param runId The unique identifier of the agent run
      * @param result The result produced by the agent, or null if no result was produced
      */
-    public suspend fun onAgentCompleted(
+    public open suspend fun onAgentCompleted(
         agentId: String,
         runId: String,
         result: Any?
@@ -198,7 +136,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param runId The unique identifier of the agent run
      * @param throwable The exception that was thrown during agent execution
      */
-    public suspend fun onAgentExecutionFailed(
+    public open suspend fun onAgentExecutionFailed(
         agentId: String,
         runId: String,
         throwable: Throwable
@@ -209,7 +147,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      *
      * @param agentId The unique identifier of the agent that will be closed.
      */
-    public suspend fun onAgentClosing(
+    public open suspend fun onAgentClosing(
         agentId: String
     )
 
@@ -224,7 +162,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param baseEnvironment The initial environment to be transformed
      * @return The transformed environment after all handlers have been applied
      */
-    public suspend fun onAgentEnvironmentTransforming(
+    public open suspend fun onAgentEnvironmentTransforming(
         strategy: AIAgentStrategy<*, *, AIAgentGraphContextBase>,
         agent: GraphAIAgent<*, *>,
         baseEnvironment: AIAgentEnvironment
@@ -241,7 +179,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param context The context of the strategy execution
      */
     @OptIn(InternalAgentsApi::class)
-    public suspend fun onStrategyStarting(strategy: AIAgentStrategy<*, *, *>, context: AIAgentContext)
+    public open suspend fun onStrategyStarting(strategy: AIAgentStrategy<*, *, *>, context: AIAgentContext)
 
     /**
      * Notifies all registered strategy handlers that a strategy has finished execution.
@@ -251,7 +189,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param result The result produced by the strategy execution
      */
     @OptIn(InternalAgentsApi::class)
-    public suspend fun onStrategyCompleted(
+    public open suspend fun onStrategyCompleted(
         strategy: AIAgentStrategy<*, *, *>,
         context: AIAgentContext,
         result: Any?,
@@ -269,7 +207,12 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param tools The list of tool descriptors available for the LLM call
      * @param model The language model instance that will process the request
      */
-    public suspend fun onLLMCallStarting(runId: String, prompt: Prompt, model: LLModel, tools: List<ToolDescriptor>)
+    public open suspend fun onLLMCallStarting(
+        runId: String,
+        prompt: Prompt,
+        model: LLModel,
+        tools: List<ToolDescriptor>
+    )
 
     /**
      * Notifies all registered LLM handlers after a language model call has completed.
@@ -280,7 +223,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param model The language model instance that processed the request
      * @param responses The response messages received from the language model
      */
-    public suspend fun onLLMCallCompleted(
+    public open suspend fun onLLMCallCompleted(
         runId: String,
         prompt: Prompt,
         model: LLModel,
@@ -300,7 +243,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param tool The tool that is being called
      * @param toolArgs The arguments provided to the tool
      */
-    public suspend fun onToolCallStarting(runId: String, toolCallId: String?, tool: Tool<*, *>, toolArgs: Any?)
+    public open suspend fun onToolCallStarting(runId: String, toolCallId: String?, tool: Tool<*, *>, toolArgs: Any?)
 
     /**
      * Notifies all registered tool handlers when a validation error occurs during a tool call.
@@ -310,7 +253,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param toolArgs The arguments that failed validation
      * @param error The validation error message
      */
-    public suspend fun onToolValidationFailed(
+    public open suspend fun onToolValidationFailed(
         runId: String,
         toolCallId: String?,
         tool: Tool<*, *>,
@@ -326,7 +269,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param toolArgs The arguments provided to the tool
      * @param throwable The exception that caused the failure
      */
-    public suspend fun onToolCallFailed(
+    public open suspend fun onToolCallFailed(
         runId: String,
         toolCallId: String?,
         tool: Tool<*, *>,
@@ -342,7 +285,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param toolArgs The arguments that were provided to the tool
      * @param result The result produced by the tool, or null if no result was produced
      */
-    public suspend fun onToolCallCompleted(
+    public open suspend fun onToolCallCompleted(
         runId: String,
         toolCallId: String?,
         tool: Tool<*, *>,
@@ -365,7 +308,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param model The language model being used for streaming
      * @param tools The list of available tool descriptors for this streaming session
      */
-    public suspend fun onLLMStreamingStarting(
+    public open suspend fun onLLMStreamingStarting(
         runId: String,
         prompt: Prompt,
         model: LLModel,
@@ -381,7 +324,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param runId The unique identifier for this streaming session
      * @param streamFrame The individual stream frame containing partial response data
      */
-    public suspend fun onLLMStreamingFrameReceived(runId: String, streamFrame: StreamFrame)
+    public open suspend fun onLLMStreamingFrameReceived(runId: String, streamFrame: StreamFrame)
 
     /**
      * Invoked if an error occurs during the streaming process.
@@ -392,7 +335,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param runId The unique identifier for this streaming session
      * @param throwable The exception that occurred during streaming, if applicable
      */
-    public suspend fun onLLMStreamingFailed(runId: String, throwable: Throwable)
+    public open suspend fun onLLMStreamingFailed(runId: String, throwable: Throwable)
 
     /**
      * Invoked after streaming from a language model completes.
@@ -405,7 +348,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param model The language model that was used for streaming
      * @param tools The list of tool descriptors that were available for this streaming session
      */
-    public suspend fun onLLMStreamingCompleted(
+    public open suspend fun onLLMStreamingCompleted(
         runId: String,
         prompt: Prompt,
         model: LLModel,
@@ -434,9 +377,9 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptEnvironmentCreated(
+    public open fun interceptEnvironmentCreated(
         feature: AIAgentFeature<*, *>,
-        transform: suspend AgentEnvironmentTransformingContext.(AIAgentEnvironment) -> AIAgentEnvironment
+        transform: AgentEnvironmentTransformingContext.(AIAgentEnvironment) -> AIAgentEnvironment
     )
 
     /**
@@ -453,7 +396,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptAgentStarting(
+    public open fun interceptAgentStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentStartingContext) -> Unit
     )
@@ -470,7 +413,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptAgentCompleted(
+    public open fun interceptAgentCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: AgentCompletedContext) -> Unit
     )
@@ -487,7 +430,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptAgentExecutionFailed(
+    public open fun interceptAgentExecutionFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: AgentExecutionFailedContext) -> Unit
     )
@@ -505,7 +448,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptAgentClosing(
+    public open fun interceptAgentClosing(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: AgentClosingContext) -> Unit
     )
@@ -524,7 +467,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptStrategyStarting(
+    public open fun interceptStrategyStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyStartingContext) -> Unit
     )
@@ -542,7 +485,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptStrategyCompleted(
+    public open fun interceptStrategyCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyCompletedContext) -> Unit
     )
@@ -560,7 +503,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptLLMCallStarting(
+    public open fun interceptLLMCallStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallStartingContext) -> Unit
     )
@@ -578,7 +521,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptLLMCallCompleted(
+    public open fun interceptLLMCallCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallCompletedContext) -> Unit
     )
@@ -599,7 +542,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptLLMStreamingStarting(
+    public open fun interceptLLMStreamingStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingStartingContext) -> Unit
     )
@@ -620,7 +563,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptLLMStreamingFrameReceived(
+    public open fun interceptLLMStreamingFrameReceived(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingFrameReceivedContext) -> Unit
     )
@@ -631,7 +574,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * @param feature The feature associated with this handler.
      * @param handle The handler that processes stream errors
      */
-    public fun interceptLLMStreamingFailed(
+    public open fun interceptLLMStreamingFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingFailedContext) -> Unit
     )
@@ -652,7 +595,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptLLMStreamingCompleted(
+    public open fun interceptLLMStreamingCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMStreamingCompletedContext) -> Unit
     )
@@ -670,7 +613,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptToolCallStarting(
+    public open fun interceptToolCallStarting(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallStartingContext) -> Unit
     )
@@ -688,7 +631,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptToolValidationFailed(
+    public open fun interceptToolValidationFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolValidationFailedContext) -> Unit
     )
@@ -706,7 +649,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptToolCallFailed(
+    public open fun interceptToolCallFailed(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallFailedContext) -> Unit
     )
@@ -724,7 +667,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
      * }
      * ```
      */
-    public fun interceptToolCallCompleted(
+    public open fun interceptToolCallCompleted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallCompletedContext) -> Unit
     )
@@ -743,7 +686,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             imports = arrayOf("ai.koog.agents.core.feature.handler.agent.AgentStartingContext")
         )
     )
-    public fun interceptBeforeAgentStarted(
+    public open fun interceptBeforeAgentStarted(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentStartingContext) -> Unit
     )
@@ -760,7 +703,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptAgentFinished(
+    public open fun interceptAgentFinished(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: AgentCompletedContext) -> Unit
     )
@@ -777,7 +720,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptAgentRunError(
+    public open fun interceptAgentRunError(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentExecutionFailedContext) -> Unit
     )
@@ -794,7 +737,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptAgentBeforeClose(
+    public open fun interceptAgentBeforeClose(
         feature: AIAgentFeature<*, *>,
         handle: suspend (AgentClosingContext) -> Unit
     )
@@ -811,7 +754,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptStrategyStart(
+    public open fun interceptStrategyStart(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyStartingContext) -> Unit
     )
@@ -828,7 +771,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptStrategyFinished(
+    public open fun interceptStrategyFinished(
         feature: AIAgentFeature<*, *>,
         handle: suspend (StrategyCompletedContext) -> Unit
     )
@@ -845,7 +788,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptBeforeLLMCall(
+    public open fun interceptBeforeLLMCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallStartingContext) -> Unit
     )
@@ -862,7 +805,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptAfterLLMCall(
+    public open fun interceptAfterLLMCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: LLMCallCompletedContext) -> Unit
     )
@@ -880,7 +823,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptToolCall(
+    public open fun interceptToolCall(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallStartingContext) -> Unit
     )
@@ -897,7 +840,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptToolCallResult(
+    public open fun interceptToolCallResult(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallCompletedContext) -> Unit
     )
@@ -914,7 +857,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptToolCallFailure(
+    public open fun interceptToolCallFailure(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolCallFailedContext) -> Unit
     )
@@ -931,7 +874,7 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
             )
         )
     )
-    public fun interceptToolValidationError(
+    public open fun interceptToolValidationError(
         feature: AIAgentFeature<*, *>,
         handle: suspend (eventContext: ToolValidationFailedContext) -> Unit
     )
@@ -949,8 +892,6 @@ public expect abstract class AIAgentPipeline(clock: Clock) {
         feature: AIAgentFeature<*, *>,
         crossinline handle: suspend AgentEnvironmentTransformingContext.(AIAgentEnvironment) -> AIAgentEnvironment
     ): suspend (AgentEnvironmentTransformingContext, AIAgentEnvironment) -> AIAgentEnvironment
-
-    protected fun FeatureConfig.isAccepted(eventContext: AgentLifecycleEventContext): Boolean
 
     //endregion Private Methods
 }

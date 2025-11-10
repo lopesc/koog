@@ -1,5 +1,6 @@
 package ai.koog.agents.core.tools
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.tools.ToolRegistry.Builder
 import kotlin.jvm.JvmStatic
 
@@ -114,12 +115,14 @@ public class ToolRegistry private constructor(tools: List<Tool<*, *>> = emptyLis
      * This class allows for the registration of tools in a controlled manner.
      * It ensures that each tool added to the registry has a unique name.
      */
+    @JavaAPI
     public class Builder internal constructor() {
         private val tools = mutableListOf<Tool<*, *>>()
 
         /**
          * Add a tool to the registry
          */
+        @JavaAPI
         public fun tool(tool: Tool<*, *>) {
             require(tool.name !in tools.map { it.name }) { "Tool \"${tool.name}\" is already defined" }
             tools.add(tool)
@@ -128,6 +131,7 @@ public class ToolRegistry private constructor(tools: List<Tool<*, *>> = emptyLis
         /**
          * Add multiple tools to the registry
          */
+        @JavaAPI
         public fun tools(toolsList: List<Tool<*, *>>) {
             toolsList.forEach { tool(it) }
         }
@@ -140,6 +144,7 @@ public class ToolRegistry private constructor(tools: List<Tool<*, *>> = emptyLis
          *
          * @return A new `ToolRegistry` instance containing the registered tools.
          */
+        @JavaAPI
         public fun build(): ToolRegistry {
             return ToolRegistry(tools)
         }
@@ -157,6 +162,7 @@ public class ToolRegistry private constructor(tools: List<Tool<*, *>> = emptyLis
          * @return A new instance of the `Builder` class for constructing a `ToolRegistry`.
          */
         @JvmStatic
+        @JavaAPI
         public fun builder(): ToolRegistryBuilder = ToolRegistryBuilder()
 
         /**

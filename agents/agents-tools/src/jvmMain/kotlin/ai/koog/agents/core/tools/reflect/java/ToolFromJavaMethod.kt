@@ -1,5 +1,6 @@
 package ai.koog.agents.core.tools.reflect.java
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.annotations.InternalAgentToolsApi
@@ -30,6 +31,7 @@ private const val nonSerializableParameterPrefix = "__##nonSerializableParameter
  * @property json A JSON serializer for serializing and deserializing data.
  */
 @OptIn(InternalAgentToolsApi::class)
+@JavaAPI
 public class ToolFromJavaMethod(
     private val method: java.lang.reflect.Method,
     private val thisRef: Any? = null,
@@ -44,6 +46,7 @@ public class ToolFromJavaMethod(
      * @property args A map of parameters to their respective values.
      * Each key is a Parameter, matched with a value which can potentially be null.
      */
+    @JavaAPI
     public data class VarArgs(val args: Map<java.lang.reflect.Parameter, Any?>) {
         /**
          * Converts a map of parameters and their corresponding values into a list of pairs,
@@ -52,6 +55,7 @@ public class ToolFromJavaMethod(
          *
          * @return a list of pairs containing parameter names and their values. If a parameter has no name, it is ignored.
          */
+        @JavaAPI
         public fun asNamedValues(): List<Pair<String, Any?>> = args.mapNotNull { (parameter, value) ->
             if (parameter.isNamePresent) {
                 parameter.name to value
@@ -117,6 +121,7 @@ public class ToolFromJavaMethod(
      * @property method A reference to the `Method` instance this serializer is associated with. The method's
      * parameters are used to generate the serialization descriptor and process argument values.
      */
+    @JavaAPI
     public class VarArgsSerializer(public val method: java.lang.reflect.Method) : KSerializer<VarArgs> {
         @OptIn(InternalSerializationApi::class)
         override val descriptor: SerialDescriptor

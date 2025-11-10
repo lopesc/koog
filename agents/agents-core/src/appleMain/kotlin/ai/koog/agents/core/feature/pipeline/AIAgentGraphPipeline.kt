@@ -2,18 +2,12 @@ package ai.koog.agents.core.feature.pipeline
 
 import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.agents.core.agent.entity.AIAgentNodeBase
-import ai.koog.agents.core.agent.entity.AIAgentStorageKey
 import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.handler.node.NodeExecutionCompletedContext
-import ai.koog.agents.core.feature.handler.node.NodeExecutionCompletedHandler
-import ai.koog.agents.core.feature.handler.node.NodeExecutionEventHandler
 import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedContext
-import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedHandler
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingContext
-import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingHandler
 import kotlinx.datetime.Clock
-import kotlin.jvm.JvmOverloads
 import kotlin.reflect.KType
 
 /**
@@ -23,7 +17,9 @@ import kotlin.reflect.KType
  * @property clock The clock used for time-based operations within the pipeline
  */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock = Clock.System) : AIAgentPipeline {
+public actual open class AIAgentGraphPipeline actual constructor(clock: Clock) : AIAgentPipeline(clock) {
+    private val graphPipelineDelegate = AIAgentGraphPipelineImpl(clock)
+
     /**
      * Installs a feature into the pipeline with the provided configuration.
      *
@@ -35,12 +31,12 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param feature The feature implementation to be installed
      * @param configure A lambda to customize the feature configuration
      */
-    public open fun <TConfig : FeatureConfig, TFeature : Any> install(
+    public actual open fun <TConfig : FeatureConfig, TFeature : Any> install(
         feature: AIAgentGraphFeature<TConfig, TFeature>,
-        configure: TConfig.() -> Unit,
-    )
-
-    //region Trigger Node Handlers
+        configure: TConfig.() -> Unit
+    ) {
+        graphPipelineDelegate.install(feature, configure)
+    }
 
     /**
      * Notifies all registered node handlers before a node is executed.
@@ -50,12 +46,14 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param input The input data for the node execution
      * @param inputType The type of the input data provided to the node
      */
-    public open suspend fun onNodeExecutionStarting(
+    public actual open suspend fun onNodeExecutionStarting(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         inputType: KType
-    )
+    ) {
+        graphPipelineDelegate.onNodeExecutionStarting(node, context, input, inputType)
+    }
 
     /**
      * Notifies all registered node handlers after a node has been executed.
@@ -67,14 +65,16 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param output The output data produced by the node execution
      * @param outputType The type of the output data produced by the node execution
      */
-    public open suspend fun onNodeExecutionCompleted(
+    public actual open suspend fun onNodeExecutionCompleted(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         output: Any?,
         inputType: KType,
-        outputType: KType,
-    )
+        outputType: KType
+    ) {
+        graphPipelineDelegate.onNodeExecutionCompleted(node, context, input, output, inputType, outputType)
+    }
 
     /**
      * Handles errors occurring during the execution of a node by invoking all registered node execution error handlers.
@@ -85,17 +85,15 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param inputType The type of the input data provided to the node.
      * @param throwable The exception or error that occurred during node execution.
      */
-    public open suspend fun onNodeExecutionFailed(
+    public actual open suspend fun onNodeExecutionFailed(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         inputType: KType,
         throwable: Throwable
-    )
-
-    //endregion Trigger Node Handlers
-
-    //region Interceptors
+    ) {
+        graphPipelineDelegate.onNodeExecutionFailed(node, context, input, inputType, throwable)
+    }
 
     /**
      * Intercepts node execution before it starts.
@@ -110,10 +108,12 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionStarting(
+    public actual open fun interceptNodeExecutionStarting(
         feature: AIAgentGraphFeature<*, *>,
-        handle: suspend (eventContext: NodeExecutionStartingContext) -> Unit
-    )
+        handle: suspend (NodeExecutionStartingContext) -> Unit
+    ) {
+        graphPipelineDelegate.interceptNodeExecutionStarting(feature, handle)
+    }
 
     /**
      * Intercepts node execution after it completes.
@@ -128,10 +128,12 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionCompleted(
+    public actual open fun interceptNodeExecutionCompleted(
         feature: AIAgentGraphFeature<*, *>,
-        handle: suspend (eventContext: NodeExecutionCompletedContext) -> Unit
-    )
+        handle: suspend (NodeExecutionCompletedContext) -> Unit
+    ) {
+        graphPipelineDelegate.interceptNodeExecutionCompleted(feature, handle)
+    }
 
     /**
      * Intercepts and handles node execution errors for a given feature.
@@ -146,10 +148,11 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionFailed(
+    public actual open fun interceptNodeExecutionFailed(
         feature: AIAgentGraphFeature<*, *>,
-        handle: suspend (eventContext: NodeExecutionFailedContext) -> Unit
-    )
+        handle: suspend (NodeExecutionFailedContext) -> Unit
+    ) {
+        graphPipelineDelegate.interceptNodeExecutionFailed(feature, handle)
+    }
 
-    //endregion Interceptors
 }

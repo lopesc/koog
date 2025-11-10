@@ -4,22 +4,31 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.GraphAIAgent
 import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
+import ai.koog.agents.core.agent.entity.AIAgentStorageKey
 import ai.koog.agents.core.agent.entity.AIAgentStrategy
 import ai.koog.agents.core.annotation.InternalAgentsApi
-import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.environment.AIAgentEnvironment
 import ai.koog.agents.core.feature.AIAgentFeature
 import ai.koog.agents.core.feature.handler.AgentLifecycleEventContext
-import ai.koog.agents.core.feature.handler.agent.*
+import ai.koog.agents.core.feature.handler.agent.AgentClosingContext
+import ai.koog.agents.core.feature.handler.agent.AgentCompletedContext
+import ai.koog.agents.core.feature.handler.agent.AgentEnvironmentTransformingContext
+import ai.koog.agents.core.feature.handler.agent.AgentEventHandler
+import ai.koog.agents.core.feature.handler.agent.AgentExecutionFailedContext
+import ai.koog.agents.core.feature.handler.agent.AgentStartingContext
 import ai.koog.agents.core.feature.handler.llm.LLMCallCompletedContext
+import ai.koog.agents.core.feature.handler.llm.LLMCallEventHandler
 import ai.koog.agents.core.feature.handler.llm.LLMCallStartingContext
 import ai.koog.agents.core.feature.handler.strategy.StrategyCompletedContext
+import ai.koog.agents.core.feature.handler.strategy.StrategyEventHandler
 import ai.koog.agents.core.feature.handler.strategy.StrategyStartingContext
 import ai.koog.agents.core.feature.handler.streaming.LLMStreamingCompletedContext
+import ai.koog.agents.core.feature.handler.streaming.LLMStreamingEventHandler
 import ai.koog.agents.core.feature.handler.streaming.LLMStreamingFailedContext
 import ai.koog.agents.core.feature.handler.streaming.LLMStreamingFrameReceivedContext
 import ai.koog.agents.core.feature.handler.streaming.LLMStreamingStartingContext
 import ai.koog.agents.core.feature.handler.tool.ToolCallCompletedContext
+import ai.koog.agents.core.feature.handler.tool.ToolCallEventHandler
 import ai.koog.agents.core.feature.handler.tool.ToolCallFailedContext
 import ai.koog.agents.core.feature.handler.tool.ToolCallStartingContext
 import ai.koog.agents.core.feature.handler.tool.ToolValidationFailedContext
@@ -30,7 +39,6 @@ import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
-import kotlinx.coroutines.future.await
 import kotlinx.datetime.Clock
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -52,376 +60,10 @@ import kotlin.reflect.KType
  *
  * @param clock Clock instance for time-related operations
  */
-public actual abstract class AIAgentPipeline @JvmOverloads actual constructor(clock: Clock) {
+public actual abstract class AIAgentPipeline actual constructor(clock: Clock) {
 
     @PublishedApi
     internal val pipelineDelegate: AIAgentPipelineImpl = AIAgentPipelineImpl(clock)
-
-    // JVM Unique Interceptors
-
-    /**
-     * Intercepts environment creation to allow features to modify or enhance the agent environment.
-     *
-     * This overload is JVM-friendly and accepts an async transformer.
-     *
-     * @param feature The feature associated with this transformer.
-     * @param transform An async transformer that takes the transforming context and the current environment,
-     *                  and returns a possibly modified environment.
-     *
-     * Example (Java):
-     * pipeline.interceptEnvironmentCreated(feature, (ctx, environment) -> {
-     *     // Modify the environment and return a CompletionStage
-     *     return java.util.concurrent.CompletableFuture.completedFuture(environment);
-     * });
-     */
-    @JavaAPI
-    public fun interceptEnvironmentCreated(
-        feature: AIAgentFeature<*, *>,
-        transform: TransformInterceptor<AgentEnvironmentTransformingContext, AIAgentEnvironment>
-    ) {
-        interceptEnvironmentCreated(feature) { environment ->
-            transform.transform(this, environment)
-        }
-    }
-
-    /**
-     * Intercepts on before an agent started to modify or enhance the agent.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptAgentStarting(feature, eventContext -> {
-     *     // Inspect agent stages
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptAgentStarting(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<AgentStartingContext>
-    ) {
-        interceptAgentStarting(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts the completion of an agent's operation and assigns a custom handler to process the result.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptAgentCompleted(feature, eventContext -> {
-     *     // Handle completion
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptAgentCompleted(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<AgentCompletedContext>
-    ) {
-        interceptAgentCompleted(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts and handles errors occurring during the execution of an AI agent's strategy.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptAgentExecutionFailed(feature, eventContext -> {
-     *     // Handle the error
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptAgentExecutionFailed(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<AgentExecutionFailedContext>
-    ) {
-        interceptAgentExecutionFailed(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts and sets a handler to be invoked before an agent is closed.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptAgentClosing(feature, eventContext -> {
-     *     // Pre-close actions
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptAgentClosing(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<AgentClosingContext>
-    ) {
-        interceptAgentClosing(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts strategy started event to perform actions when an agent strategy begins execution.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptStrategyStarting(feature, event -> {
-     *     // Strategy started
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptStrategyStarting(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<StrategyStartingContext>
-    ) {
-        interceptStrategyStarting(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Sets up an interceptor to handle the completion of a strategy for the given feature.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptStrategyCompleted(feature, event -> {
-     *     // Strategy completed
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptStrategyCompleted(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<StrategyCompletedContext>
-    ) {
-        interceptStrategyCompleted(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts LLM calls before they are made to modify or log the prompt.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMCallStarting(feature, eventContext -> {
-     *     // About to call LLM
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMCallStarting(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMCallStartingContext>
-    ) {
-        interceptLLMCallStarting(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts LLM calls after they are made to process or log the response.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMCallCompleted(feature, eventContext -> {
-     *     // Process response
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMCallCompleted(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMCallCompletedContext>
-    ) {
-        interceptLLMCallCompleted(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts streaming operations before they begin to modify or log the streaming request.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMStreamingStarting(feature, eventContext -> {
-     *     // About to start streaming
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMStreamingStarting(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMStreamingStartingContext>
-    ) {
-        interceptLLMStreamingStarting(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts stream frames as they are received during the streaming process.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMStreamingFrameReceived(feature, eventContext -> {
-     *     // Handle stream frame
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMStreamingFrameReceived(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMStreamingFrameReceivedContext>
-    ) {
-        interceptLLMStreamingFrameReceived(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts errors during the streaming process.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMStreamingFailed(feature, eventContext -> {
-     *     // Handle streaming error
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMStreamingFailed(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMStreamingFailedContext>
-    ) {
-        interceptLLMStreamingFailed(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts streaming operations after they complete to perform post-processing or cleanup.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptLLMStreamingCompleted(feature, eventContext -> {
-     *     // Streaming completed
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptLLMStreamingCompleted(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<LLMStreamingCompletedContext>
-    ) {
-        interceptLLMStreamingCompleted(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts and handles tool calls for the specified feature.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptToolCallStarting(feature, eventContext -> {
-     *     // Process tool call
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptToolCallStarting(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<ToolCallStartingContext>
-    ) {
-        interceptToolCallStarting(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts validation errors encountered during the execution of tools associated with the specified feature.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptToolValidationFailed(feature, eventContext -> {
-     *     // Handle validation failure
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptToolValidationFailed(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<ToolValidationFailedContext>
-    ) {
-        interceptToolValidationFailed(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Sets up an interception mechanism to handle tool call failures for a specific feature.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptToolCallFailed(feature, eventContext -> {
-     *     // Handle tool call failure
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptToolCallFailed(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<ToolCallFailedContext>
-    ) {
-        interceptToolCallFailed(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-    /**
-     * Intercepts the result of a tool call with a custom handler for a specific feature.
-     *
-     * JVM-friendly overload that accepts an async interceptor.
-     *
-     * Example (Java):
-     * pipeline.interceptToolCallCompleted(feature, eventContext -> {
-     *     // Handle tool call result
-     *     return java.util.concurrent.CompletableFuture.completedFuture(null);
-     * });
-     */
-    @JavaAPI
-    public fun interceptToolCallCompleted(
-        feature: AIAgentFeature<*, *>,
-        handle: AsyncInterceptor<ToolCallCompletedContext>
-    ) {
-        interceptToolCallCompleted(feature) { ctx ->
-            handle.intercept(ctx).await()
-        }
-    }
-
-
-    // Default Multiplatform Interceptors
 
     /**
      * Retrieves a feature implementation from the current pipeline using the specified [feature], if it is registered.

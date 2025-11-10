@@ -13,7 +13,6 @@ import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedHandler
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingContext
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingHandler
 import kotlinx.datetime.Clock
-import kotlin.jvm.JvmOverloads
 import kotlin.reflect.KType
 
 /**
@@ -22,8 +21,14 @@ import kotlin.reflect.KType
  *
  * @property clock The clock used for time-based operations within the pipeline
  */
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock = Clock.System) : AIAgentPipeline {
+internal class AIAgentGraphPipelineImpl(clock: Clock = Clock.System) : AIAgentGraphPipeline(clock) {
+
+    /**
+     * Map of node execution handlers registered for different features.
+     * Keys are feature storage keys, values are node execution handlers.
+     */
+    private val executeNodeHandlers: MutableMap<AIAgentStorageKey<*>, NodeExecutionEventHandler> = mutableMapOf()
+
     /**
      * Installs a feature into the pipeline with the provided configuration.
      *
@@ -35,10 +40,18 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param feature The feature implementation to be installed
      * @param configure A lambda to customize the feature configuration
      */
-    public open fun <TConfig : FeatureConfig, TFeature : Any> install(
+    public override fun <TConfig : FeatureConfig, TFeature : Any> install(
         feature: AIAgentGraphFeature<TConfig, TFeature>,
         configure: TConfig.() -> Unit,
-    )
+    ) {
+        val featureConfig = feature.createInitialConfig().apply { configure() }
+        val featureImpl = feature.install(
+            config = featureConfig,
+            pipeline = this,
+        )
+
+        registeredFeatures[feature.key] = RegisteredFeature(featureImpl, featureConfig)
+    }
 
     //region Trigger Node Handlers
 
@@ -50,12 +63,15 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param input The input data for the node execution
      * @param inputType The type of the input data provided to the node
      */
-    public open suspend fun onNodeExecutionStarting(
+    public override suspend fun onNodeExecutionStarting(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         inputType: KType
-    )
+    ) {
+        val eventContext = NodeExecutionStartingContext(node, context, input, inputType)
+        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionStartingHandler.handle(eventContext) }
+    }
 
     /**
      * Notifies all registered node handlers after a node has been executed.
@@ -67,14 +83,17 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param output The output data produced by the node execution
      * @param outputType The type of the output data produced by the node execution
      */
-    public open suspend fun onNodeExecutionCompleted(
+    public override suspend fun onNodeExecutionCompleted(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         output: Any?,
         inputType: KType,
         outputType: KType,
-    )
+    ) {
+        val eventContext = NodeExecutionCompletedContext(node, context, input, output, inputType, outputType)
+        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionCompletedHandler.handle(eventContext) }
+    }
 
     /**
      * Handles errors occurring during the execution of a node by invoking all registered node execution error handlers.
@@ -85,13 +104,16 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * @param inputType The type of the input data provided to the node.
      * @param throwable The exception or error that occurred during node execution.
      */
-    public open suspend fun onNodeExecutionFailed(
+    public override suspend fun onNodeExecutionFailed(
         node: AIAgentNodeBase<*, *>,
         context: AIAgentContext,
         input: Any?,
         inputType: KType,
         throwable: Throwable
-    )
+    ) {
+        val eventContext = NodeExecutionFailedContext(node, context, input, inputType, throwable)
+        executeNodeHandlers.values.forEach { handler -> handler.nodeExecutionFailedHandler.handle(eventContext) }
+    }
 
     //endregion Trigger Node Handlers
 
@@ -110,10 +132,16 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionStarting(
+    public override fun interceptNodeExecutionStarting(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionStartingContext) -> Unit
-    )
+    ) {
+        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
+
+        handler.nodeExecutionStartingHandler = NodeExecutionStartingHandler(
+            function = createConditionalHandler(feature, handle)
+        )
+    }
 
     /**
      * Intercepts node execution after it completes.
@@ -128,10 +156,16 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionCompleted(
+    public override fun interceptNodeExecutionCompleted(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionCompletedContext) -> Unit
-    )
+    ) {
+        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
+
+        handler.nodeExecutionCompletedHandler = NodeExecutionCompletedHandler(
+            function = createConditionalHandler(feature, handle)
+        )
+    }
 
     /**
      * Intercepts and handles node execution errors for a given feature.
@@ -146,10 +180,16 @@ public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: C
      * }
      * ```
      */
-    public open fun interceptNodeExecutionFailed(
+    public override fun interceptNodeExecutionFailed(
         feature: AIAgentGraphFeature<*, *>,
         handle: suspend (eventContext: NodeExecutionFailedContext) -> Unit
-    )
+    ) {
+        val handler = executeNodeHandlers.getOrPut(feature.key) { NodeExecutionEventHandler() }
+
+        handler.nodeExecutionFailedHandler = NodeExecutionFailedHandler(
+            function = createConditionalHandler(feature, handle)
+        )
+    }
 
     //endregion Interceptors
 }

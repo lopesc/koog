@@ -1,5 +1,6 @@
 package ai.koog.agents.core.tools.reflect.java
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
@@ -29,6 +30,7 @@ import kotlin.reflect.jvm.kotlinFunction
  * @param json The Json instance to use for serialization. Defaults to [Json].
  * @return A list of [Tool] objects representing the tools defined by this [ToolSet].
  */
+@JavaAPI
 public fun ToolSet.asJavaTools(json: Json = Json): List<ai.koog.agents.core.tools.Tool<*, *>> {
     return this::class.asTools(json = json, thisRef = this)
 }
@@ -45,6 +47,7 @@ public fun ToolSet.asJavaTools(json: Json = Json): List<ai.koog.agents.core.tool
  * @return A list of `Tool` objects created from the annotated methods of the class.
  * @throws IllegalArgumentException if no annotated methods are found in the class.
  */
+@JavaAPI
 public fun <T : ToolSet> Class<out T>.asJavaTools(
     json: Json = Json,
     thisRef: T? = null
@@ -236,6 +239,7 @@ private fun Method.getImplementedMethods(): Sequence<Method> {
  * @return The corresponding `ToolParameterType` for the provided `Type`.
  *         Throws an `IllegalArgumentException` or error for unsupported types.
  */
+@JavaAPI
 public fun java.lang.reflect.Type.asToolType(): ai.koog.agents.core.tools.ToolParameterType {
     return when (this) {
         // Primitive types and their wrappers

@@ -1,5 +1,6 @@
 package ai.koog.prompt.dsl
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.params.LLMParams
 import ai.koog.prompt.params.LLMParams.Schema
@@ -39,6 +40,7 @@ public data class Prompt @JvmOverloads constructor(
          */
         @JvmStatic
         @JvmOverloads
+        @JavaAPI
         public fun builder(id: String, clock: Clock = Clock.System): PromptBuilder = PromptBuilder(id, clock = clock)
 
         /**

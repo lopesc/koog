@@ -1,5 +1,6 @@
 package ai.koog.agents.core.tools
 
+import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.tools.reflect.ToolSet
 import ai.koog.agents.core.tools.reflect.asTools
 import ai.koog.agents.core.tools.reflect.java.asJavaTools
@@ -27,6 +28,7 @@ public actual class ToolRegistryBuilder {
      * - Adding single or multiple tools to the registry.
      * - Finalizing the registration and creating a `ToolRegistry` instance containing the registered tools.
      */
+    @JavaAPI
     private val builder = ToolRegistry.Builder()
 
     /**
@@ -36,6 +38,7 @@ public actual class ToolRegistryBuilder {
      * @param tool The tool instance to be added. Must not conflict with an already registered tool of the same name.
      * @return The instance of the `ToolRegistryBuilder` for method chaining.
      */
+    @JavaAPI
     public actual fun tool(tool: Tool<*, *>): ToolRegistryBuilder = apply { builder.tool(tool) }
 
     /**
@@ -44,6 +47,7 @@ public actual class ToolRegistryBuilder {
      * @param toolsList The list of tools to be added to the registry. Each tool is represented by an instance of [Tool] with specific arguments and result types.
      * @return The current instance of [ToolRegistryBuilder] to enable method chaining.
      */
+    @JavaAPI
     public actual fun tools(toolsList: List<Tool<*, *>>): ToolRegistryBuilder = apply { builder.tools(toolsList) }
 
     /**
@@ -54,6 +58,7 @@ public actual class ToolRegistryBuilder {
      *
      * @return A `ToolRegistry` instance containing the tools registered through the builder.
      */
+    @JavaAPI
     public actual fun build(): ToolRegistry = builder.build()
 
     /**
@@ -68,6 +73,7 @@ public actual class ToolRegistryBuilder {
      * @return The `ToolRegistryBuilder` instance to allow method chaining.
      */
     @JvmOverloads
+    @JavaAPI
     public fun tool(
         toolFunction: KFunction<*>,
         json: Json = Json,
@@ -89,6 +95,7 @@ public actual class ToolRegistryBuilder {
      * @return The current instance of `ToolRegistryBuilder` to allow method chaining.
      */
     @JvmOverloads
+    @JavaAPI
     public fun tool(method: java.lang.reflect.Method): ToolRegistryBuilder = apply {
         tool(method.asTool())
     }
@@ -101,6 +108,7 @@ public actual class ToolRegistryBuilder {
      * @param json The `Json` instance to use for serialization and deserialization of tools. Defaults to a standard [Json] instance.
      */
     @JvmOverloads
+    @JavaAPI
     public fun tools(
         toolSet: ToolSet,
         json: Json = Json

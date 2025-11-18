@@ -21,6 +21,12 @@ public actual open class AIAgentGraphPipeline actual constructor(clock: Clock) :
     private val graphPipelineDelegate = AIAgentGraphPipelineImpl(clock)
 
     /**
+     * Provides access to the [Clock] used in the pipeline.
+     */
+    public actual open val clock: Clock get() = graphPipelineDelegate.clock
+
+
+    /**
      * Installs a feature into the pipeline with the provided configuration.
      *
      * This method initializes the feature with a custom configuration and registers it in the pipeline.

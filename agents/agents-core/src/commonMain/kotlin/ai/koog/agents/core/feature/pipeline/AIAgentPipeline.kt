@@ -86,6 +86,16 @@ import kotlin.reflect.safeCast
  */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 public expect abstract class AIAgentPipeline @JvmOverloads constructor(clock: Clock) {
+    internal open suspend fun prepareFeatures()
+
+    /**
+     * Closes all feature stream providers.
+     *
+     * This internal method properly shuts down all message processors of registered features,
+     * ensuring resources are released appropriately.
+     */
+    internal open suspend fun closeFeaturesStreamProviders()
+
     /**
      * Retrieves a feature implementation from the current pipeline using the specified [feature], if it is registered.
      *

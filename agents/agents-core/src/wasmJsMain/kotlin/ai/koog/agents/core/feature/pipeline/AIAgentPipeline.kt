@@ -969,4 +969,11 @@ public actual abstract class AIAgentPipeline actual constructor(clock: Clock) {
         pipelineDelegate.createConditionalHandlerImpl(feature, handle)
 
     //endregion Private Methods
+    internal actual open suspend fun prepareFeatures() {
+        pipelineDelegate.prepareFeatures()
+    }
+
+    internal actual open suspend fun closeFeaturesStreamProviders() {
+        pipelineDelegate.closeFeaturesStreamProviders()
+    }
 }

@@ -22,6 +22,11 @@ import kotlin.reflect.KType
 public actual open class AIAgentGraphPipeline @JvmOverloads actual constructor(clock: Clock) : AIAgentPipeline(clock) {
     private val graphPipelineDelegate = AIAgentGraphPipelineImpl(clock)
 
+    /**
+     * Provides access to the [Clock] used in the pipeline.
+     */
+    public actual open val clock: Clock get() = graphPipelineDelegate.clock
+
     // JVM Unique interceptors:
     /**
      * Intercepts node execution before it starts.

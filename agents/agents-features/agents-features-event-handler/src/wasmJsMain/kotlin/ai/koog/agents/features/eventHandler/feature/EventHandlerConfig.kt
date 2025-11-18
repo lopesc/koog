@@ -60,105 +60,114 @@ import ai.koog.agents.core.feature.handler.tool.ToolValidationFailedContext
  * ```
  */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-public expect open class EventHandlerConfig constructor() : FeatureConfig {
-
-    //region Agent Handlers
+public actual open class EventHandlerConfig actual constructor() : FeatureConfig() {
+    private val delegate = EventHandlerConfigImpl()
 
     /**
      * Append handler called when an agent is started.
      */
-    public open fun onAgentStarting(handler: suspend (eventContext: AgentStartingContext) -> Unit)
+    public actual open fun onAgentStarting(handler: suspend (AgentStartingContext) -> Unit) {
+        delegate.onAgentStarting(handler)
+    }
 
     /**
      * Append handler called when an agent finishes execution.
      */
-    public open fun onAgentCompleted(handler: suspend (eventContext: AgentCompletedContext) -> Unit)
+    public actual open fun onAgentCompleted(handler: suspend (AgentCompletedContext) -> Unit) {
+        delegate.onAgentCompleted(handler)
+    }
 
     /**
      * Append handler called when an error occurs during agent execution.
      */
-    public open fun onAgentExecutionFailed(handler: suspend (eventContext: AgentExecutionFailedContext) -> Unit)
+    public actual open fun onAgentExecutionFailed(handler: suspend (AgentExecutionFailedContext) -> Unit) {
+        delegate.onAgentExecutionFailed(handler)
+    }
 
     /**
      * Appends a handler called before an agent is closed. This allows for additional behavior
      * to be executed prior to the agent being closed.
      */
-    public open fun onAgentClosing(handler: suspend (eventContext: AgentClosingContext) -> Unit)
-
-    //endregion Trigger Agent Handlers
-
-    //region Strategy Handlers
+    public actual open fun onAgentClosing(handler: suspend (AgentClosingContext) -> Unit) {
+        delegate.onAgentClosing(handler)
+    }
 
     /**
      * Append handler called when a strategy starts execution.
      */
-    public open fun onStrategyStarting(handler: suspend (eventContext: StrategyStartingContext) -> Unit)
+    public actual open fun onStrategyStarting(handler: suspend (StrategyStartingContext) -> Unit) {
+        delegate.onStrategyStarting(handler)
+    }
 
     /**
      * Append handler called when a strategy finishes execution.
      */
-    public open fun onStrategyCompleted(handler: suspend (eventContext: StrategyCompletedContext) -> Unit)
-
-    //endregion Strategy Handlers
-
-    //region Node Handlers
+    public actual open fun onStrategyCompleted(handler: suspend (StrategyCompletedContext) -> Unit) {
+        delegate.onStrategyCompleted(handler)
+    }
 
     /**
      * Append handler called before a node in the agent's execution graph is processed.
      */
-    public open fun onNodeExecutionStarting(handler: suspend (eventContext: NodeExecutionStartingContext) -> Unit)
+    public actual open fun onNodeExecutionStarting(handler: suspend (NodeExecutionStartingContext) -> Unit) {
+        delegate.onNodeExecutionStarting(handler)
+    }
 
     /**
      * Append handler called after a node in the agent's execution graph has been processed.
      */
-    public open fun onNodeExecutionCompleted(handler: suspend (eventContext: NodeExecutionCompletedContext) -> Unit)
+    public actual open fun onNodeExecutionCompleted(handler: suspend (NodeExecutionCompletedContext) -> Unit) {
+        delegate.onNodeExecutionCompleted(handler)
+    }
 
     /**
      * Append handler called when an error occurs during the execution of a node.
      */
-    public open fun onNodeExecutionFailed(handler: suspend (eventContext: NodeExecutionFailedContext) -> Unit)
-
-    //endregion Node Handlers
-
-    //region LLM Call Handlers
+    public actual open fun onNodeExecutionFailed(handler: suspend (NodeExecutionFailedContext) -> Unit) {
+        delegate.onNodeExecutionFailed(handler)
+    }
 
     /**
      * Append handler called before a call is made to the language model.
      */
-    public open fun onLLMCallStarting(handler: suspend (eventContext: LLMCallStartingContext) -> Unit)
+    public actual open fun onLLMCallStarting(handler: suspend (LLMCallStartingContext) -> Unit) {
+        delegate.onLLMCallStarting(handler)
+    }
 
     /**
      * Append handler called after a response is received from the language model.
      */
-    public open fun onLLMCallCompleted(handler: suspend (eventContext: LLMCallCompletedContext) -> Unit)
-
-    //endregion LLM Call Handlers
-
-    //region Tool Call Handlers
+    public actual open fun onLLMCallCompleted(handler: suspend (LLMCallCompletedContext) -> Unit) {
+        delegate.onLLMCallCompleted(handler)
+    }
 
     /**
      * Append handler called when a tool is about to be called.
      */
-    public open fun onToolCallStarting(handler: suspend (eventContext: ToolCallStartingContext) -> Unit)
+    public actual open fun onToolCallStarting(handler: suspend (ToolCallStartingContext) -> Unit) {
+        delegate.onToolCallStarting(handler)
+    }
 
     /**
      * Append handler called when a validation error occurs during a tool call.
      */
-    public open fun onToolValidationFailed(handler: suspend (eventContext: ToolValidationFailedContext) -> Unit)
+    public actual open fun onToolValidationFailed(handler: suspend (ToolValidationFailedContext) -> Unit) {
+        delegate.onToolValidationFailed(handler)
+    }
 
     /**
      * Append handler called when a tool call fails with an exception.
      */
-    public open fun onToolCallFailed(handler: suspend (eventContext: ToolCallFailedContext) -> Unit)
+    public actual open fun onToolCallFailed(handler: suspend (ToolCallFailedContext) -> Unit) {
+        delegate.onToolCallFailed(handler)
+    }
 
     /**
      * Append handler called when a tool call completes successfully.
      */
-    public open fun onToolCallCompleted(handler: suspend (eventContext: ToolCallCompletedContext) -> Unit)
-
-    //endregion Tool Call Handlers
-
-    //region Stream Handlers
+    public actual open fun onToolCallCompleted(handler: suspend (ToolCallCompletedContext) -> Unit) {
+        delegate.onToolCallCompleted(handler)
+    }
 
     /**
      * Registers a handler to be invoked before streaming from a language model begins.
@@ -177,7 +186,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
      * }
      * ```
      */
-    public open fun onLLMStreamingStarting(handler: suspend (eventContext: LLMStreamingStartingContext) -> Unit)
+    public actual open fun onLLMStreamingStarting(handler: suspend (LLMStreamingStartingContext) -> Unit) {
+        delegate.onLLMStreamingStarting(handler)
+    }
 
     /**
      * Registers a handler to be invoked when stream frames are received during streaming.
@@ -198,7 +209,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
      * }
      * ```
      */
-    public open fun onLLMStreamingFrameReceived(handler: suspend (eventContext: LLMStreamingFrameReceivedContext) -> Unit)
+    public actual open fun onLLMStreamingFrameReceived(handler: suspend (LLMStreamingFrameReceivedContext) -> Unit) {
+        delegate.onLLMStreamingFrameReceived(handler)
+    }
 
     /**
      * Registers a handler to be invoked when an error occurs during streaming.
@@ -216,7 +229,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
      * }
      * ```
      */
-    public open fun onLLMStreamingFailed(handler: suspend (eventContext: LLMStreamingFailedContext) -> Unit)
+    public actual open fun onLLMStreamingFailed(handler: suspend (LLMStreamingFailedContext) -> Unit) {
+        delegate.onLLMStreamingFailed(handler)
+    }
 
     /**
      * Registers a handler to be invoked after streaming from a language model completes.
@@ -235,11 +250,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
      * }
      * ```
      */
-    public open fun onLLMStreamingCompleted(handler: suspend (eventContext: LLMStreamingCompletedContext) -> Unit)
-
-    //endregion Stream Handlers
-
-    //region Deprecated Handlers
+    public actual open fun onLLMStreamingCompleted(handler: suspend (LLMStreamingCompletedContext) -> Unit) {
+        delegate.onLLMStreamingCompleted(handler)
+    }
 
     /**
      * Append handler called when an agent is started.
@@ -248,7 +261,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onAgentStarting instead",
         ReplaceWith("onAgentStarting(handler)", "ai.koog.agents.core.feature.handler.AgentStartingContext")
     )
-    public open fun onBeforeAgentStarted(handler: suspend (eventContext: AgentStartContext) -> Unit)
+    public actual open fun onBeforeAgentStarted(handler: suspend (AgentStartContext) -> Unit) {
+        delegate.onBeforeAgentStarted(handler)
+    }
 
     /**
      * Append handler called when an agent finishes execution.
@@ -257,7 +272,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onAgentCompleted instead",
         ReplaceWith("onAgentCompleted(handler)", "ai.koog.agents.core.feature.handler.AgentCompletedContext")
     )
-    public open fun onAgentFinished(handler: suspend (eventContext: AgentFinishedContext) -> Unit)
+    public actual open fun onAgentFinished(handler: suspend (AgentFinishedContext) -> Unit) {
+        delegate.onAgentFinished(handler)
+    }
 
     /**
      * Append handler called when an error occurs during agent execution.
@@ -269,7 +286,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
             "ai.koog.agents.core.feature.handler.AgentExecutionFailedContext"
         )
     )
-    public open fun onAgentRunError(handler: suspend (eventContext: AgentRunErrorContext) -> Unit)
+    public actual open fun onAgentRunError(handler: suspend (AgentRunErrorContext) -> Unit) {
+        delegate.onAgentRunError(handler)
+    }
 
     /**
      * Appends a handler called before an agent is closed. This allows for additional behavior
@@ -279,7 +298,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onAgentClosing instead",
         ReplaceWith("onAgentClosing(handler)", "ai.koog.agents.core.feature.handler.AgentClosingContext")
     )
-    public open fun onAgentBeforeClose(handler: suspend (eventContext: AgentBeforeCloseContext) -> Unit)
+    public actual open fun onAgentBeforeClose(handler: suspend (AgentBeforeCloseContext) -> Unit) {
+        delegate.onAgentBeforeClose(handler)
+    }
 
     /**
      * Append handler called when a strategy starts execution.
@@ -288,7 +309,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onStrategyStarting instead",
         ReplaceWith("onStrategyStarting(handler)", "ai.koog.agents.core.feature.handler.StrategyStartingContext")
     )
-    public open fun onStrategyStarted(handler: suspend (eventContext: StrategyStartContext) -> Unit)
+    public actual open fun onStrategyStarted(handler: suspend (StrategyStartContext) -> Unit) {
+        delegate.onStrategyStarted(handler)
+    }
 
     /**
      * Append handler called when a strategy finishes execution.
@@ -297,7 +320,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onStrategyCompleted instead",
         ReplaceWith("onStrategyCompleted(handler)", "ai.koog.agents.core.feature.handler.StrategyCompletedContext")
     )
-    public open fun onStrategyFinished(handler: suspend (eventContext: StrategyFinishedContext) -> Unit)
+    public actual open fun onStrategyFinished(handler: suspend (StrategyFinishedContext) -> Unit) {
+        delegate.onStrategyFinished(handler)
+    }
 
     /**
      * Append handler called before a node in the agent's execution graph is processed.
@@ -309,7 +334,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
             "ai.koog.agents.core.feature.handler.NodeExecutionStartingContext"
         )
     )
-    public open fun onBeforeNode(handler: suspend (eventContext: NodeBeforeExecuteContext) -> Unit)
+    public actual open fun onBeforeNode(handler: suspend (NodeBeforeExecuteContext) -> Unit) {
+        delegate.onBeforeNode(handler)
+    }
 
     /**
      * Append handler called after a node in the agent's execution graph has been processed.
@@ -321,7 +348,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
             "ai.koog.agents.core.feature.handler.NodeExecutionCompletedContext"
         )
     )
-    public open fun onAfterNode(handler: suspend (eventContext: NodeAfterExecuteContext) -> Unit)
+    public actual open fun onAfterNode(handler: suspend (NodeAfterExecuteContext) -> Unit) {
+        delegate.onAfterNode(handler)
+    }
 
     /**
      * Append handler called when an error occurs during the execution of a node.
@@ -330,7 +359,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onNodeExecutionError instead",
         ReplaceWith("onNodeExecutionFailed(handler)", "ai.koog.agents.core.feature.handler.NodeExecutionFailedContext")
     )
-    public open fun onNodeExecutionError(handler: suspend (eventContext: NodeExecutionErrorContext) -> Unit)
+    public actual open fun onNodeExecutionError(handler: suspend (NodeExecutionErrorContext) -> Unit) {
+        delegate.onNodeExecutionError(handler)
+    }
 
     /**
      * Append handler called before a call is made to the language model.
@@ -339,7 +370,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onLLMCallStarting instead",
         ReplaceWith("onLLMCallStarting(handler)", "ai.koog.agents.core.feature.handler.LLMCallStartingContext")
     )
-    public open fun onBeforeLLMCall(handler: suspend (eventContext: BeforeLLMCallContext) -> Unit)
+    public actual open fun onBeforeLLMCall(handler: suspend (BeforeLLMCallContext) -> Unit) {
+        delegate.onBeforeLLMCall(handler)
+    }
 
     /**
      * Append handler called after a response is received from the language model.
@@ -348,7 +381,9 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onLLMCallCompleted instead",
         ReplaceWith("onLLMCallCompleted(handler)", "ai.koog.agents.core.feature.handler.LLMCallCompletedContext")
     )
-    public open fun onAfterLLMCall(handler: suspend (eventContext: AfterLLMCallContext) -> Unit)
+    public actual open fun onAfterLLMCall(handler: suspend (AfterLLMCallContext) -> Unit) {
+        delegate.onAfterLLMCall(handler)
+    }
 
     /**
      * Append handler called when a tool is about to be called.
@@ -357,10 +392,12 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
         message = "Use onToolCallStarting instead",
         ReplaceWith("onToolCallStarting(handler)", "ai.koog.agents.core.feature.handler.ToolCallStartingContext")
     )
-    public open fun onToolCall(handler: suspend (eventContext: ToolCallContext) -> Unit)
+    public actual open fun onToolCall(handler: suspend (ToolCallContext) -> Unit) {
+        delegate.onToolCall(handler)
+    }
 
     /**
-     * Append handler called when a validation error occurs during a tool call.
+     * Append handler called when some tool validation fails.
      */
     @Deprecated(
         message = "Use onToolValidationFailed instead",
@@ -369,152 +406,132 @@ public expect open class EventHandlerConfig constructor() : FeatureConfig {
             "ai.koog.agents.core.feature.handler.ToolValidationFailedContext"
         )
     )
-    public open fun onToolValidationError(handler: suspend (eventContext: ToolValidationErrorContext) -> Unit)
+    public actual open fun onToolValidationError(handler: suspend (ToolValidationErrorContext) -> Unit) {
+        delegate.onToolValidationError(handler)
+    }
+
 
     /**
-     * Append handler called when a tool call fails with an exception.
+     * Append handler called when some tool execution fails.
      */
     @Deprecated(
         message = "Use onToolCallFailed instead",
         ReplaceWith("onToolCallFailed(handler)", "ai.koog.agents.core.feature.handler.ToolCallFailedContext")
     )
-    public open fun onToolCallFailure(handler: suspend (eventContext: ToolCallFailureContext) -> Unit)
+    public actual open fun onToolCallFailure(handler: suspend (ToolCallFailureContext) -> Unit) {
+        delegate.onToolCallFailure(handler)
+    }
+
 
     /**
-     * Append handler called when a tool call completes successfully.
+     * Append handler called when a tool execution finishes with successful result.
      */
     @Deprecated(
         message = "Use onToolCallCompleted instead",
         ReplaceWith("onToolCallCompleted(handler)", "ai.koog.agents.core.feature.handler.ToolCallCompletedContext")
     )
-    public open fun onToolCallResult(handler: suspend (eventContext: ToolCallResultContext) -> Unit)
-
-    //endregion Deprecated Handlers
-
-    //region Invoke Agent Handlers
+    public actual open fun onToolCallResult(handler: suspend (ToolCallResultContext) -> Unit) {
+        delegate.onToolCallResult(handler)
+    }
 
     /**
      * Invoke handlers for an event when an agent is started.
      */
-    internal open suspend fun invokeOnAgentStarting(eventContext: AgentStartingContext)
+    internal actual open suspend fun invokeOnAgentStarting(eventContext: AgentStartingContext) {
+        delegate.invokeOnAgentStarting(eventContext)
+    }
 
     /**
      * Invoke handlers for after a node in the agent's execution graph has been processed event.
      */
-    internal open suspend fun invokeOnAgentCompleted(eventContext: AgentCompletedContext)
+    internal actual open suspend fun invokeOnAgentCompleted(eventContext: AgentCompletedContext) {
+        delegate.invokeOnAgentCompleted(eventContext)
+    }
 
     /**
      * Invoke handlers for an event when an error occurs during agent execution.
      */
-    internal open suspend fun invokeOnAgentExecutionFailed(eventContext: AgentExecutionFailedContext)
+    internal actual open suspend fun invokeOnAgentExecutionFailed(eventContext: AgentExecutionFailedContext) {
+        delegate.invokeOnAgentExecutionFailed(eventContext)
+    }
 
     /**
      * Invokes the handler associated with the event that occurs before an agent is closed.
      */
-    internal open suspend fun invokeOnAgentClosing(eventContext: AgentClosingContext)
-
-    //endregion Invoke Agent Handlers
-
-    //region Invoke Strategy Handlers
+    internal actual open suspend fun invokeOnAgentClosing(eventContext: AgentClosingContext) {
+        delegate.invokeOnAgentClosing(eventContext)
+    }
 
     /**
      * Invoke handlers for an event when strategy starts execution.
      */
-    internal open suspend fun invokeOnStrategyStarting(eventContext: StrategyStartingContext)
+    internal actual open suspend fun invokeOnStrategyStarting(eventContext: StrategyStartingContext) {
+        delegate.invokeOnStrategyStarting(eventContext)
+    }
 
     /**
      * Invoke handlers for an event when a strategy finishes execution.
      */
-    internal open suspend fun invokeOnStrategyCompleted(eventContext: StrategyCompletedContext)
-
-    //endregion Invoke Strategy Handlers
-
-    //region Invoke Node Handlers
+    internal actual open suspend fun invokeOnStrategyCompleted(eventContext: StrategyCompletedContext) {
+        delegate.invokeOnStrategyCompleted(eventContext)
+    }
 
     /**
      * Invoke handlers for before a node in the agent's execution graph is processed event.
      */
-    internal open suspend fun invokeOnNodeExecutionStarting(eventContext: NodeExecutionStartingContext)
+    internal actual open suspend fun invokeOnNodeExecutionStarting(eventContext: NodeExecutionStartingContext) {
+        delegate.invokeOnNodeExecutionStarting(eventContext)
+    }
 
     /**
      * Invoke handlers for after a node in the agent's execution graph has been processed event.
      */
-    internal open suspend fun invokeOnNodeExecutionCompleted(eventContext: NodeExecutionCompletedContext)
+    internal actual open suspend fun invokeOnNodeExecutionCompleted(eventContext: NodeExecutionCompletedContext) {
+        delegate.invokeOnNodeExecutionCompleted(eventContext)
+    }
 
-    /**
-     * Invokes the error handling logic for a node execution error event.
-     */
-    internal open suspend fun invokeOnNodeExecutionFailed(interceptContext: NodeExecutionFailedContext)
+    internal actual open suspend fun invokeOnNodeExecutionFailed(interceptContext: NodeExecutionFailedContext) {
+        delegate.invokeOnNodeExecutionFailed(interceptContext)
+    }
 
-    //endregion Invoke Node Handlers
+    internal actual open suspend fun invokeOnLLMCallStarting(eventContext: LLMCallStartingContext) {
+        delegate.invokeOnLLMCallStarting(eventContext)
+    }
 
-    //region Invoke LLM Call Handlers
+    internal actual open suspend fun invokeOnLLMCallCompleted(eventContext: LLMCallCompletedContext) {
+        delegate.invokeOnLLMCallCompleted(eventContext)
+    }
 
-    /**
-     * Invoke handlers for before a call is made to the language model event.
-     */
-    internal open suspend fun invokeOnLLMCallStarting(eventContext: LLMCallStartingContext)
+    internal actual open suspend fun invokeOnToolCallStarting(eventContext: ToolCallStartingContext) {
+        delegate.invokeOnToolCallStarting(eventContext)
+    }
 
-    /**
-     * Invoke handlers for after a response is received from the language model event.
-     */
-    internal open suspend fun invokeOnLLMCallCompleted(eventContext: LLMCallCompletedContext)
+    internal actual open suspend fun invokeOnToolValidationFailed(eventContext: ToolValidationFailedContext) {
+        delegate.invokeOnToolValidationFailed(eventContext)
+    }
 
-    //endregion Invoke LLM Call Handlers
+    internal actual open suspend fun invokeOnToolCallFailed(eventContext: ToolCallFailedContext) {
+        delegate.invokeOnToolCallFailed(eventContext)
+    }
 
-    //region Invoke Tool Call Handlers
+    internal actual open suspend fun invokeOnToolCallCompleted(eventContext: ToolCallCompletedContext) {
+        delegate.invokeOnToolCallCompleted(eventContext)
+    }
 
-    /**
-     * Invoke handlers for the tool call event.
-     */
-    internal open suspend fun invokeOnToolCallStarting(eventContext: ToolCallStartingContext)
+    internal actual open suspend fun invokeOnLLMStreamingStarting(eventContext: LLMStreamingStartingContext) {
+        delegate.invokeOnLLMStreamingStarting(eventContext)
+    }
 
-    /**
-     * Invoke handlers for a validation error during a tool call event.
-     */
-    internal open suspend fun invokeOnToolValidationFailed(eventContext: ToolValidationFailedContext)
+    internal actual open suspend fun invokeOnLLMStreamingFrameReceived(eventContext: LLMStreamingFrameReceivedContext) {
+        delegate.invokeOnLLMStreamingFrameReceived(eventContext)
+    }
 
-    /**
-     * Invoke handlers for a tool call failure with an exception event.
-     */
-    internal open suspend fun invokeOnToolCallFailed(eventContext: ToolCallFailedContext)
+    internal actual open suspend fun invokeOnLLMStreamingFailed(eventContext: LLMStreamingFailedContext) {
+        delegate.invokeOnLLMStreamingFailed(eventContext)
+    }
 
-    /**
-     * Invoke handlers for an event when a tool call is completed successfully.
-     */
-    internal open suspend fun invokeOnToolCallCompleted(eventContext: ToolCallCompletedContext)
+    internal actual open suspend fun invokeOnLLMStreamingCompleted(eventContext: LLMStreamingCompletedContext) {
+        delegate.invokeOnLLMStreamingCompleted(eventContext)
+    }
 
-    //endregion Invoke Tool Call Handlers
-
-    //region Invoke Stream Handlers
-
-    /**
-     * Invokes the handler associated with the event that occurs before streaming starts.
-     *
-     * @param eventContext The context containing information about the streaming session about to begin
-     */
-    internal open suspend fun invokeOnLLMStreamingStarting(eventContext: LLMStreamingStartingContext)
-
-    /**
-     * Invokes the handler associated with stream frame events during streaming.
-     *
-     * @param eventContext The context containing the stream frame data
-     */
-    internal open suspend fun invokeOnLLMStreamingFrameReceived(eventContext: LLMStreamingFrameReceivedContext)
-
-    /**
-     * Invokes the handler associated with the event that occurs when an error occurs during streaming.
-     *
-     * @param eventContext The context containing information about the streaming session that experienced the error
-     */
-    internal open suspend fun invokeOnLLMStreamingFailed(eventContext: LLMStreamingFailedContext)
-
-    /**
-     * Invokes the handler associated with the event that occurs after streaming completes.
-     *
-     * @param eventContext The context containing information about the completed streaming session
-     */
-    internal open suspend fun invokeOnLLMStreamingCompleted(eventContext: LLMStreamingCompletedContext)
-
-    //endregion Invoke Stream Handlers
 }

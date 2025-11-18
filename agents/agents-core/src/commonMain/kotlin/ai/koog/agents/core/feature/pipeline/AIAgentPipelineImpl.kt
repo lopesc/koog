@@ -135,7 +135,7 @@ internal class AIAgentPipelineImpl(clock: Clock) : AIAgentPipeline(clock) {
      */
     private val llmStreamingEventHandlers: MutableMap<AIAgentStorageKey<*>, LLMStreamingEventHandler> = mutableMapOf()
 
-    internal suspend fun prepareFeatures() {
+    internal override suspend fun prepareFeatures() {
         withContext(featurePrepareDispatcher) {
             registeredFeatures.values.map { it.featureConfig }.forEach { featureConfig ->
                 featureConfig.messageProcessors.map { processor ->
@@ -155,7 +155,7 @@ internal class AIAgentPipelineImpl(clock: Clock) : AIAgentPipeline(clock) {
      * This internal method properly shuts down all message processors of registered features,
      * ensuring resources are released appropriately.
      */
-    internal suspend fun closeFeaturesStreamProviders() {
+    internal override suspend fun closeFeaturesStreamProviders() {
         registeredFeatures.values.map { it.featureConfig }.forEach { config ->
             config.messageProcessors.forEach { provider ->
                 provider.close()

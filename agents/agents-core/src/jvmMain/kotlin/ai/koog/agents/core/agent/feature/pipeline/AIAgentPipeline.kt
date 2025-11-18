@@ -1327,4 +1327,11 @@ public actual abstract class AIAgentPipeline @JvmOverloads actual constructor(cl
         pipelineDelegate.createConditionalHandlerImpl(feature, handle)
 
     //endregion Private Methods
+    internal actual open suspend fun prepareFeatures() {
+        pipelineDelegate.prepareFeatures()
+    }
+
+    internal actual open suspend fun closeFeaturesStreamProviders() {
+        pipelineDelegate.closeFeaturesStreamProviders()
+    }
 }

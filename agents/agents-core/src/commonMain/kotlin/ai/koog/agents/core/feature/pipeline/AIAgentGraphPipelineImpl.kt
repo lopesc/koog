@@ -12,6 +12,7 @@ import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedContext
 import ai.koog.agents.core.feature.handler.node.NodeExecutionFailedHandler
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingContext
 import ai.koog.agents.core.feature.handler.node.NodeExecutionStartingHandler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
 import kotlin.reflect.KType
 
@@ -22,12 +23,21 @@ import kotlin.reflect.KType
  * @property clock The clock used for time-based operations within the pipeline
  */
 internal class AIAgentGraphPipelineImpl(clock: Clock = Clock.System) : AIAgentGraphPipeline(clock) {
+    override val clock: Clock = clock
 
     /**
      * Map of node execution handlers registered for different features.
      * Keys are feature storage keys, values are node execution handlers.
      */
     private val executeNodeHandlers: MutableMap<AIAgentStorageKey<*>, NodeExecutionEventHandler> = mutableMapOf()
+
+    /**
+     * Map of registered features and their configurations.
+     * Keys are feature storage keys, values are feature configurations.
+     */
+    private val registeredFeatures: MutableMap<AIAgentStorageKey<*>, RegisteredFeature> = mutableMapOf()
+
+    private val featurePrepareDispatcher = Dispatchers.Default.limitedParallelism(5)
 
     /**
      * Installs a feature into the pipeline with the provided configuration.

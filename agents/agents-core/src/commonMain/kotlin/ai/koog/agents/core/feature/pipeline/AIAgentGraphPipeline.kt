@@ -25,6 +25,11 @@ import kotlin.reflect.KType
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 public expect open class AIAgentGraphPipeline @JvmOverloads constructor(clock: Clock = Clock.System) : AIAgentPipeline {
     /**
+     * Provides access to the [Clock] instance for obtaining the current time.
+     */
+    public open val clock: Clock
+
+    /**
      * Installs a feature into the pipeline with the provided configuration.
      *
      * This method initializes the feature with a custom configuration and registers it in the pipeline.

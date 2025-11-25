@@ -1,7 +1,6 @@
 package ai.koog.agents.core.agent
 
-import ai.koog.agents.core.agent.AIAgent.Companion.State
-import ai.koog.agents.core.agent.AIAgent.Companion.State.NotStarted
+import ai.koog.agents.core.agent.AIAgentState.NotStarted
 import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.agents.core.agent.context.element.AgentRunInfoContextElement
 import ai.koog.agents.core.agent.entity.AIAgentStrategy
@@ -34,7 +33,7 @@ import kotlin.uuid.Uuid
 public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgentContext>(
     protected val logger: KLogger,
     id: String? = null,
-) : AIAgent<Input, Output> {
+) : AIAgent<Input, Output>() {
     /**
      * A mutex used to synchronize access to the state of the agent. Ensures that only one coroutine
      * can modify or read the shared state of the agent at a time, preventing data races and ensuring
@@ -42,9 +41,9 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
      */
     private val agentStateMutex: Mutex = Mutex()
 
-    private var state: State<Output> = NotStarted()
+    private var state: AIAgentState<Output> = NotStarted()
 
-    final override suspend fun getState(): State<Output> = agentStateMutex.withLock { state.copy() }
+    final override suspend fun getState(): AIAgentState<Output> = agentStateMutex.withLock { state.copy() }
 
     final override val id: String by lazy { id ?: Uuid.random().toString() }
 
@@ -82,7 +81,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
                     "Agent was already started. Please use AIAgentService.createAgentAndRun(agentInput) to run an agent multiple times."
                 )
             }
-            state = State.Starting()
+            state = AIAgentState.Starting()
         }
 
         val runId = Uuid.random().toString()
@@ -100,7 +99,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
             val context = prepareContext(agentInput, runId)
 
             agentStateMutex.withLock {
-                state = State.Running(context)
+                state = AIAgentState.Running(context)
             }
 
             logger.debug {
@@ -126,7 +125,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
                     runId = runId,
                     throwable = e
                 )
-                agentStateMutex.withLock { state = State.Failed(e) }
+                agentStateMutex.withLock { state = AIAgentState.Failed(e) }
                 throw e
             }
 
@@ -145,9 +144,9 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
 
             agentStateMutex.withLock {
                 state = if (result != null) {
-                    State.Finished(result)
+                    AIAgentState.Finished(result)
                 } else {
-                    State.Failed(Exception("result is null"))
+                    AIAgentState.Failed(Exception("result is null"))
                 }
             }
 

@@ -1,30 +1,16 @@
 package ai.koog.agents.core.agent
 
-import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.agent.AIAgentState.Finished
-import ai.koog.agents.core.agent.AIAgentState.Running
 import ai.koog.agents.core.agent.GraphAIAgent.FeatureContext
 import ai.koog.agents.core.agent.config.AIAgentConfig
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
-import ai.koog.agents.core.agent.config.MissingToolsConversionStrategy
-import ai.koog.agents.core.agent.config.ToolCallDescriber
-import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
-import ai.koog.agents.core.annotation.InternalAgentsApi
-import ai.koog.agents.core.feature.AIAgentFunctionalFeature
-import ai.koog.agents.core.feature.AIAgentGraphFeature
-import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.core.utils.ConfigureAction
-import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.params.LLMParams
-import ai.koog.utils.io.Closeable
 import kotlinx.datetime.Clock
 import kotlin.jvm.JvmStatic
-import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.uuid.ExperimentalUuidApi
 

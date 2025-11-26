@@ -21,42 +21,6 @@ import kotlin.reflect.jvm.kotlinFunction
 import ai.koog.agents.core.tools.Tool as ToolType
 
 /**
- * Converts all instance methods of [this] class marked as [Tool] to a list of tools.
- *
- * See [asTool] for detailed description.
- *
- * @param json The Json instance to use for serialization.
- *
- * ```
- * interface MyToolsetInterface : ToolSet {
- *     @Tool
- *     @LLMDescription("My best tool")
- *     fun my_best_tool(arg1: String, arg2: Int)
- * }
- *
- * class MyToolset : MyToolsetInterface {
- *     @Tool
- *     @LLMDescription("My best tool overridden description")
- *     fun my_best_tool(arg1: String, arg2: Int) {
- *         // ...
- *     }
- *
- *     @Tool
- *     @LLMDescription("My best tool 2")
- *     fun my_best_tool_2(arg1: String, arg2: Int) {
- *          // ...
- *     }
- * }
- *
- * val myToolset = MyToolset()
- * val tools = myToolset.asTools()
- * ```
- */
-public fun ToolSet.asTools(json: Json = Json): List<ToolType<ToolFromCallable.VarArgs, *>> {
-    return this::class.asTools(json = json, thisRef = this)
-}
-
-/**
  * Converts all instance methods of class/interface [T] marked as [Tool] to a list of tools that will be called on object [this].
  *
  * Note: if you manually specify type parameter [T] that is more common type that the class of [this] object (like `derivedToolset.asTools<MyToolsetInterface>()`)

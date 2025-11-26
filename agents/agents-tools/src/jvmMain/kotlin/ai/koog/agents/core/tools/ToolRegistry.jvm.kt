@@ -1,6 +1,7 @@
 package ai.koog.agents.core.tools
 
 import ai.koog.agents.annotations.JavaAPI
+import ai.koog.agents.core.tools.annotations.InternalAgentToolsApi
 import ai.koog.agents.core.tools.reflect.ToolSet
 import ai.koog.agents.core.tools.reflect.asTools
 import ai.koog.agents.core.tools.reflect.java.asJavaTools
@@ -17,6 +18,7 @@ import kotlin.reflect.KFunction
  * the registry is configured appropriately.
  */
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+@JavaAPI
 public actual class ToolRegistryBuilder {
     /**
      * Instance of `ToolRegistry.Builder` used to construct and manage the registration of tools.
@@ -94,6 +96,7 @@ public actual class ToolRegistryBuilder {
      * @param method The Java `Method` instance to be registered as a tool.
      * @return The current instance of `ToolRegistryBuilder` to allow method chaining.
      */
+    @OptIn(InternalAgentToolsApi::class)
     @JvmOverloads
     @JavaAPI
     public fun tool(method: java.lang.reflect.Method): ToolRegistryBuilder = apply {

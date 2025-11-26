@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import static ai.koog.agents.core.tools.reflect.UtilKt.asTool;
 import static org.junit.Assert.*;
 
 public class JavaMethodToolsTest {
@@ -40,7 +41,7 @@ public class JavaMethodToolsTest {
 
     private static Tool<ToolFromCallable.VarArgs, Object> toolFrom(Method m, Object thisRef) {
         // call internal top-level function from Kotlin file javaIUtils.kt
-        return ai.koog.agents.core.tools.reflect.java.JavaIUtilsKt.asTool(m, Json.Default, thisRef, null, null);
+        return asTool(m, Json.Default, thisRef, null, null);
     }
 
     @Test

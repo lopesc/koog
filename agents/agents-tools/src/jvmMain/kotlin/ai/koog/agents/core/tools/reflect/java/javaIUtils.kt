@@ -4,6 +4,7 @@ import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
+import ai.koog.agents.core.tools.annotations.InternalAgentToolsApi
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ParamInfo
@@ -32,7 +33,7 @@ import kotlin.reflect.jvm.kotlinFunction
  */
 @JavaAPI
 public fun ToolSet.asJavaTools(json: Json = Json): List<ai.koog.agents.core.tools.Tool<*, *>> {
-    return this::class.asTools(json = json, thisRef = this)
+    return this::class.java.asJavaTools(json = json, thisRef = this)
 }
 
 /**
@@ -47,6 +48,7 @@ public fun ToolSet.asJavaTools(json: Json = Json): List<ai.koog.agents.core.tool
  * @return A list of `Tool` objects created from the annotated methods of the class.
  * @throws IllegalArgumentException if no annotated methods are found in the class.
  */
+@OptIn(InternalAgentToolsApi::class)
 @JavaAPI
 public fun <T : ToolSet> Class<out T>.asJavaTools(
     json: Json = Json,
@@ -61,7 +63,22 @@ public fun <T : ToolSet> Class<out T>.asJavaTools(
     }
 }
 
-internal fun java.lang.reflect.Method.asTool(
+
+
+/**
+ * Converts a Java `Method` into a `Tool` representation for use within the agent framework.
+ *
+ * This function attempts to convert the provided `Method` to a `KFunction` if it is a Kotlin function;
+ * otherwise, it creates a `Tool` based on Java reflection metadata.
+ *
+ * @param json The JSON format to use for serializing and deserializing arguments and results. Defaults to the standard `Json` instance.
+ * @param thisRef The instance on which the method will be invoked. This is required for non-static methods.
+ * @param name An optional name for the tool. If not provided, one will be generated.
+ * @param description An optional description of the tool's functionality. If not provided, it will be inferred.
+ * @return A tool instance derived from the given `Method`, capable of being executed by the agent framework.
+ */
+@InternalAgentToolsApi
+public fun java.lang.reflect.Method.asTool(
     json: Json = Json,
     thisRef: Any? = null,
     name: String? = null,

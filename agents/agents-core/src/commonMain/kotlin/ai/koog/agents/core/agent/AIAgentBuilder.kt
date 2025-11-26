@@ -307,6 +307,23 @@ public class AIAgentBuilder internal constructor() {
     }
 
     /**
+     * Configures the current `AIAgentBuilder` instance using the provided `AIAgentConfig`.
+     *
+     * This method applies the settings from the given `AIAgentConfig`, such as the prompt, language model,
+     * maximum agent iterations, and strategy to handle missing tools, to the builder instance.
+     *
+     * @param config An `AIAgentConfig` instance containing the configuration settings to be applied.
+     * @return The current instance of `AIAgentBuilder` for chaining further methods.
+     */
+    @JavaAPI
+    public fun agentConfig(config: AIAgentConfig): AIAgentBuilder = apply {
+        this.prompt = config.prompt
+        this.llmModel = config.model
+        this.maxIterations = config.maxAgentIterations
+        this.missingToolsConversionStrategy = config.missingToolsConversionStrategy
+    }
+
+    /**
      * Installs a graph-specific AI agent feature into the builder with its provided configuration.
      *
      * This method allows the integration of an [AIAgentGraphFeature] into the builder and its
@@ -505,6 +522,24 @@ public class GraphAgentBuilder<Input, Output>(
     }
 
     /**
+     * Configures the `GraphAgentBuilder` using the provided `AIAgentConfig` instance.
+     *
+     * The configuration sets the prompt, language model, maximum iterations,
+     * and the strategy for handling missing tools based on the given `AIAgentConfig`.
+     *
+     * @param config The `AIAgentConfig` instance containing the agent's configuration,
+     *               including prompt settings, model, iteration limits, and tool handling strategies.
+     * @return The current instance of `GraphAgentBuilder<Input, Output>` for method chaining.
+     */
+    @JavaAPI
+    public fun agentConfig(config: AIAgentConfig): GraphAgentBuilder<Input, Output> = apply {
+        this.prompt = config.prompt
+        this.llmModel = config.model
+        this.maxIterations = config.maxAgentIterations
+        this.missingToolsConversionStrategy = config.missingToolsConversionStrategy
+    }
+
+    /**
      * Installs a specified feature into the current context and applies its configuration.
      *
      * @param TConfig The type of configuration required by the feature, extending [FeatureConfig].
@@ -693,6 +728,24 @@ public class FunctionalAgentBuilder<Input, Output>(
     @JavaAPI
     public fun maxIterations(maxIterations: Int): FunctionalAgentBuilder<Input, Output> = apply {
         this.maxIterations = maxIterations
+    }
+
+    /**
+     * Configures the FunctionalAgentBuilder with the provided AI agent configuration settings.
+     *
+     * This method applies the specified configuration to the builder, including properties
+     * such as the prompt, language model, maximum iterations, and strategy for handling missing tools.
+     *
+     * @param config The configuration object of type [AIAgentConfig] containing the settings
+     *               to be applied to the builder.
+     * @return The updated instance of [FunctionalAgentBuilder] for further configuration chaining.
+     */
+    @JavaAPI
+    public fun agentConfig(config: AIAgentConfig): FunctionalAgentBuilder<Input, Output> = apply {
+        this.prompt = config.prompt
+        this.llmModel = config.model
+        this.maxIterations = config.maxAgentIterations
+        this.missingToolsConversionStrategy = config.missingToolsConversionStrategy
     }
 
     /**

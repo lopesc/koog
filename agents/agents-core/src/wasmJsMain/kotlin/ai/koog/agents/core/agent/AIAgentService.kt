@@ -25,7 +25,10 @@ public actual interface AIAgentService<Input, Output, TAgent : AIAgent<Input, Ou
     public actual suspend fun listFinishedAgents(): List<TAgent>
     public actual suspend fun closeAll()
 
+    @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
     public actual companion object {
+        public actual fun builder(): AIAgentServiceBuilder = AIAgentServiceBuilder()
+
         @OptIn(markerClass = [InternalAgentsApi::class])
         public actual inline fun <reified Input, reified Output> fromAgent(
             agent: GraphAIAgent<Input, Output>

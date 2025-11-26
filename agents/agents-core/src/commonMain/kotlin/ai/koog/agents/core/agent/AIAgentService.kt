@@ -158,6 +158,17 @@ public expect interface AIAgentService<Input, Output, TAgent : AIAgent<Input, Ou
     // TODO move out and replace invoke methods with proper factories
     public companion object {
         /**
+         * Provides a builder for constructing an instance of the AIAgentService.
+         *
+         * The returned builder allows for configuring and creating an instance of [AIAgentService],
+         * enabling the user to customize the service's settings and properties as necessary.
+         *
+         * @return An instance of [AIAgentServiceBuilder] that facilitates the construction of [AIAgentService].
+         */
+        @JvmStatic
+        public fun builder(): AIAgentServiceBuilder
+
+        /**
          * Converts a given [GraphAIAgent] instance into an [AIAgentService] instance.
          *
          * @param Input The input type that the agent processes.

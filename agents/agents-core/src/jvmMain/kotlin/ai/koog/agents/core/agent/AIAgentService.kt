@@ -26,6 +26,9 @@ public actual interface AIAgentService<Input, Output, TAgent : AIAgent<Input, Ou
     public actual suspend fun closeAll()
 
     public actual companion object {
+        @JvmStatic
+        public actual fun builder(): AIAgentServiceBuilder = AIAgentServiceBuilder()
+
         @OptIn(markerClass = [InternalAgentsApi::class])
         public actual inline fun <reified Input, reified Output> fromAgent(
             agent: GraphAIAgent<Input, Output>

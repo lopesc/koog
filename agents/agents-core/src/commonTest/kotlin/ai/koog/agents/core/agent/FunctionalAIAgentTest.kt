@@ -1,5 +1,6 @@
 package ai.koog.agents.core.agent
 
+import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
 import ai.koog.agents.core.dsl.extension.asAssistantMessage
 import ai.koog.agents.core.dsl.extension.containsToolCalls
 import ai.koog.agents.core.dsl.extension.executeMultipleTools
@@ -38,10 +39,29 @@ class FunctionalAIAgentTest {
             mockLLMMixedResponse(toolCalls, assistantResponses) onRequestEquals "Solve task"
         }
 
+        val str = object: AIAgentFunctionalStrategy<String, String> {
+            override suspend fun execute(
+                context: AIAgentFunctionalContext,
+                input: String
+            ): String {
+                var responses = context.requestLLMMultiple(input)
+
+                while (responses.containsToolCalls()) {
+                    val tools = context.extractToolCalls(responses)
+                    val results = context.executeMultipleTools(tools)
+                    responses = context.sendMultipleToolResults(results)
+                }
+
+                return responses.single().asAssistantMessage().content
+            }
+
+            override val name: String = "funStrategy"
+        }
+
         val agent = AIAgent<String, String>(
             systemPrompt = "You are helpful",
             promptExecutor = mockLLMApi,
-            strategy = graphStrategy { inputParam ->
+            strategy = functionalStrategy { inputParam ->
                 var responses = requestLLMMultiple(inputParam)
 
                 while (responses.containsToolCalls()) {
@@ -85,7 +105,7 @@ class FunctionalAIAgentTest {
         val agent = AIAgent<String, String>(
             systemPrompt = "You are helpful",
             promptExecutor = mockLLMApi,
-            strategy = graphStrategy { inputParam ->
+            strategy = functionalStrategy { inputParam ->
                 val resp = llm.writeSession {
                     updatePrompt { user(inputParam) }
                     requestLLM()
@@ -125,7 +145,7 @@ class FunctionalAIAgentTest {
             mockLLMApi,
             OllamaModels.Meta.LLAMA_3_2,
             toolRegistry = testToolRegistry,
-            strategy = graphStrategy { inputParam: String ->
+            strategy = functionalStrategy { inputParam: String ->
                 var responses = requestLLMMultiple(inputParam)
 
                 while (responses.containsToolCalls()) {

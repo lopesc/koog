@@ -1,3 +1,5 @@
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package ai.koog.agents.core.agent
 
 import ai.koog.agents.core.agent.context.AIAgentFunctionalContext
@@ -16,14 +18,12 @@ import ai.koog.agents.core.agent.entity.AIAgentStrategy
  * @property func A suspending function representing the loop logic for the strategy. It accepts
  * input data of type [TInput] and an [ai.koog.agents.core.agent.context.AIAgentFunctionalContext] to execute the loop and produce the output.
  */
-public class AIAgentFunctionalStrategy<TInput, TOutput>(
-    override val name: String,
-    public val func: suspend AIAgentFunctionalContext.(TInput) -> TOutput
-) : AIAgentStrategy<TInput, TOutput, AIAgentFunctionalContext> {
+public expect interface AIAgentFunctionalStrategy<TInput, TOutput> :
+    AIAgentStrategy<TInput, TOutput, AIAgentFunctionalContext> {
     override suspend fun execute(
         context: AIAgentFunctionalContext,
         input: TInput
-    ): TOutput = context.func(input)
+    ): TOutput
 }
 
 /**
@@ -38,8 +38,12 @@ public class AIAgentFunctionalStrategy<TInput, TOutput>(
  * and is executed within an [AIAgentFunctionalContext], producing an output of type [Output].
  * @return An instance of [AIAgentFunctionalStrategy] configured with the given loop logic and name.
  */
-public fun <Input, Output> graphStrategy(
+public fun <Input, Output> functionalStrategy(
     name: String = "funStrategy",
     func: suspend AIAgentFunctionalContext.(input: Input) -> Output
-): AIAgentFunctionalStrategy<Input, Output> =
-    AIAgentFunctionalStrategy(name, func)
+): AIAgentFunctionalStrategy<Input, Output> = object : AIAgentFunctionalStrategy<Input, Output> {
+    override val name: String = name
+    override suspend fun execute(context: AIAgentFunctionalContext, input: Input): Output = context.func(input)
+}
+
+

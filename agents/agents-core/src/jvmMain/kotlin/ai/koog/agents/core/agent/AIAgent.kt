@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import kotlin.coroutines.CoroutineContext
 import kotlin.uuid.ExperimentalUuidApi
+import ai.koog.agents.core.utils.asCoroutineContext
 
 @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 public actual abstract class AIAgent<Input, Output> : Closeable {
@@ -63,10 +64,6 @@ public actual abstract class AIAgent<Input, Output> : Closeable {
         executorService: ExecutorService? = null,
     ): CompletableFuture<AIAgentState<Output>> =
         CoroutineScope(executorService.asCoroutineContext()).future { getState() }
-
-    private fun ExecutorService?.asCoroutineContext(): CoroutineContext =
-        this?.asCoroutineDispatcher() ?: Dispatchers.Default
-
 
     // Common (multiplatform) methods:
 

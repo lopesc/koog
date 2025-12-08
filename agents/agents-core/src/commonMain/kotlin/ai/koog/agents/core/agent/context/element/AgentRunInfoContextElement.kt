@@ -1,6 +1,6 @@
 package ai.koog.agents.core.agent.context.element
 
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
+import ai.koog.agents.core.agent.config.AIAgentConfig
 import kotlinx.coroutines.currentCoroutineContext
 import kotlin.coroutines.CoroutineContext
 
@@ -20,7 +20,7 @@ import kotlin.coroutines.CoroutineContext
 public data class AgentRunInfoContextElement(
     val agentId: String,
     val runId: String,
-    val agentConfig: AIAgentConfigBase,
+    val agentConfig: AIAgentConfig,
     val strategyName: String
 ) : CoroutineContext.Element {
 

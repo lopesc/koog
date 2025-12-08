@@ -1,5 +1,3 @@
-@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-
 package ai.koog.agents.core.agent.context
 
 import ai.koog.agents.core.agent.config.AIAgentConfig
@@ -8,9 +6,12 @@ import ai.koog.agents.core.agent.entity.AIAgentStorage
 import ai.koog.agents.core.agent.entity.AIAgentStorageKey
 import ai.koog.agents.core.annotation.InternalAgentsApi
 import ai.koog.agents.core.dsl.extension.HistoryCompressionStrategy
+import ai.koog.agents.core.dsl.extension.replaceHistoryWithTLDR
 import ai.koog.agents.core.environment.AIAgentEnvironment
 import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.core.environment.SafeTool
+import ai.koog.agents.core.environment.executeTool
+import ai.koog.agents.core.environment.result
 import ai.koog.agents.core.feature.pipeline.AIAgentFunctionalPipeline
 import ai.koog.agents.core.tools.Tool
 import ai.koog.agents.core.tools.ToolArgs
@@ -22,97 +23,84 @@ import ai.koog.prompt.structure.StructureFixingParser
 import ai.koog.prompt.structure.StructuredDataDefinition
 import ai.koog.prompt.structure.StructuredResponse
 import kotlinx.coroutines.flow.Flow
-import kotlin.jvm.JvmOverloads
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 
-/**
- * Represents the execution context for an AI agent operating in a loop.
- * It provides access to critical parts such as the environment, configuration, large language model (LLM) context,
- * state management, and storage. Additionally, it enables the agent to store, retrieve, and manage context-specific data
- * during its execution lifecycle.
- *
- * @property environment The environment interface allowing the agent to interact with the external world,
- * including executing tools and reporting problems.
- * @property agentId A unique identifier for the agent, differentiating it from other agents in the system.
- * @property runId A unique identifier for the current run or instance of the agent's operation.
- * @property agentInput The input data passed to the agent, which can be of any type, depending on the agent's context.
- * @property config The configuration settings for the agent, including its prompt and model details,
- * as well as operational constraints like iteration limits.
- * @property llm The context for interacting with the large language model used by the agent, enabling message history
- * retrieval and processing.
- * @property stateManager The state management component responsible for tracking and updating the agent's state during its execution.
- * @property storage A storage interface providing persistent storage capabilities for the agent's data.
- * @property strategyName The name of the agent's strategic approach or operational method, determining its behavior
- * during execution.
- */
 @OptIn(InternalAgentsApi::class)
-@Suppress("UNCHECKED_CAST", "MissingKDocForPublicAPI")
-public expect open class AIAgentFunctionalContext internal constructor(
-    environment: AIAgentEnvironment,
-    agentId: String,
-    pipeline: AIAgentFunctionalPipeline,
-    runId: String,
-    agentInput: Any?,
-    config: AIAgentConfig,
-    llm: AIAgentLLMContext,
-    stateManager: AIAgentStateManager,
-    storage: AIAgentStorage,
-    strategyName: String,
-    parentContext: AIAgentContext? = null
-) : AIAgentContext {
+@Suppress("UNCHECKED_CAST")
+@PublishedApi
+internal class AIAgentFunctionalContextImpl(
+    override val environment: AIAgentEnvironment,
+    override val agentId: String,
+    override val runId: String,
+    override val agentInput: Any?,
+    override val config: AIAgentConfig,
+    override val llm: AIAgentLLMContext,
+    override val stateManager: AIAgentStateManager,
+    override val storage: AIAgentStorage,
+    override val strategyName: String,
+    override val pipeline: AIAgentFunctionalPipeline,
+    override val parentContext: AIAgentContext? = null
+) : AIAgentFunctionalContext(
+    environment = environment,
+    agentId = agentId,
+    runId = runId,
+    agentInput = agentInput,
+    config = config,
+    llm = llm,
+    stateManager = stateManager,
+    storage = storage,
+    strategyName = strategyName,
+    pipeline = pipeline,
+    parentContext = parentContext
+) {
 
-    override val environment: AIAgentEnvironment
-    override val agentId: String
-    override val pipeline: AIAgentFunctionalPipeline
-    override val runId: String
-    override val agentInput: Any?
-    override val config: AIAgentConfig
-    override val llm: AIAgentLLMContext
-    override val stateManager: AIAgentStateManager
-    override val storage: AIAgentStorage
-    override val strategyName: String
+    private val storeMap: MutableMap<AIAgentStorageKey<*>, Any> = mutableMapOf()
 
-    @InternalAgentsApi
-    override val parentContext: AIAgentContext?
-    open override fun store(key: AIAgentStorageKey<*>, value: Any)
+    override fun store(key: AIAgentStorageKey<*>, value: Any) {
+        storeMap[key] = value
+    }
 
-    open override fun <T> get(key: AIAgentStorageKey<*>): T?
+    override fun <T> get(key: AIAgentStorageKey<*>): T? = storeMap[key] as T?
 
-    open override fun remove(key: AIAgentStorageKey<*>): Boolean
+    override fun remove(key: AIAgentStorageKey<*>): Boolean = storeMap.remove(key) != null
 
-    open override suspend fun getHistory(): List<Message>
+    override suspend fun getHistory(): List<Message> {
+        return llm.readSession { prompt.messages }
+    }
 
-    /**
-     * Creates a copy of the current [AIAgentFunctionalContext], allowing for selective overriding of its properties.
-     * This method is particularly useful for creating modified contexts during agent execution without mutating
-     * the original context - perfect for when you need to experiment with different configurations or
-     * pass tweaked contexts down the execution pipeline while keeping the original pristine!
-     *
-     * @param environment The [AIAgentEnvironment] to be used in the new context, or retain the current playground if not specified.
-     * @param agentId The unique agent identifier, or keep the same identity if you're feeling attached.
-     * @param runId The run identifier for this execution adventure, or stick with the current journey.
-     * @param agentInput The input data for the agent - fresh data or the same trusty input, your choice!
-     * @param config The [AIAgentConfig] for the new context, or keep the current rulebook.
-     * @param llm The [AIAgentLLMContext] to be used, or maintain the current AI conversation partner.
-     * @param stateManager The [AIAgentStateManager] to be used, or preserve the current state keeper.
-     * @param storage The [AIAgentStorage] to be used, or stick with the current memory bank.
-     * @param strategyName The strategy name, or maintain the current game plan.
-     * @param pipeline The [AIAgentFunctionalPipeline] to be used, or keep the current execution superhighway.
-     * @param parentRootContext The parent root context, or maintain the current family tree.
-     * @return A shiny new [AIAgentFunctionalContext] with your desired modifications applied!
-     */
-    public open fun copy(
-        environment: AIAgentEnvironment = this.environment,
-        agentId: String = this.agentId,
-        runId: String = this.runId,
-        agentInput: Any? = this.agentInput,
-        config: AIAgentConfig = this.config,
-        llm: AIAgentLLMContext = this.llm,
-        stateManager: AIAgentStateManager = this.stateManager,
-        storage: AIAgentStorage = this.storage,
-        strategyName: String = this.strategyName,
-        pipeline: AIAgentFunctionalPipeline = this.pipeline,
-        parentRootContext: AIAgentContext? = this.parentContext,
-    ): AIAgentFunctionalContext
+    override fun copy(
+        environment: AIAgentEnvironment,
+        agentId: String,
+        runId: String,
+        agentInput: Any?,
+        config: AIAgentConfig,
+        llm: AIAgentLLMContext,
+        stateManager: AIAgentStateManager,
+        storage: AIAgentStorage,
+        strategyName: String,
+        pipeline: AIAgentFunctionalPipeline,
+        parentRootContext: AIAgentContext?
+    ): AIAgentFunctionalContextImpl {
+        val freshContext = AIAgentFunctionalContextImpl(
+            environment = environment,
+            agentId = agentId,
+            runId = runId,
+            agentInput = agentInput,
+            config = config,
+            llm = llm,
+            stateManager = stateManager,
+            storage = storage,
+            strategyName = strategyName,
+            pipeline = pipeline,
+            parentContext = parentRootContext
+        )
+
+        // Copy over the internal store map to preserve any stored values
+        freshContext.storeMap.putAll(this.storeMap)
+
+        return freshContext
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and optionally allows the use of tools during the LLM interaction.
@@ -122,10 +110,22 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param message The content of the message to be sent to the LLM.
      * @param allowToolCalls Specifies whether tool calls are allowed during the LLM interaction. Defaults to `true`.
      */
-    public open suspend fun requestLLM(
+    override suspend fun requestLLM(
         message: String,
-        allowToolCalls: Boolean = true
-    ): Message.Response
+        allowToolCalls: Boolean
+    ): Message.Response {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            if (allowToolCalls) {
+                requestLLM()
+            } else {
+                requestLLMWithoutTools()
+            }
+        }
+    }
 
     /**
      * Executes the provided action if the given response is of type [Message.Assistant].
@@ -133,10 +133,14 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param response The response message to evaluate, which may or may not be of type [Message.Assistant].
      * @param action A lambda function to execute if the response is an instance of [Message.Assistant].
      */
-    public open fun onAssistantMessage(
+    override fun onAssistantMessage(
         response: Message.Response,
         action: (Message.Assistant) -> Unit
-    )
+    ) {
+        if (response is Message.Assistant) {
+            action(response)
+        }
+    }
 
     /**
      * Checks if the list of `Message.Response` contains any instances
@@ -145,7 +149,7 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @receiver A list of `Message.Response` objects to evaluate.
      * @return `true` if there is at least one `Message.Tool.Call` in the list, otherwise `false`.
      */
-    public open fun List<Message.Response>.containsToolCalls(): Boolean
+    override fun List<Message.Response>.containsToolCalls(): Boolean = this.any { it is Message.Tool.Call }
 
     /**
      * Attempts to cast a `Message.Response` instance to a `Message.Assistant` type.
@@ -155,7 +159,7 @@ public expect open class AIAgentFunctionalContext internal constructor(
      *
      * @return The `Message.Assistant` instance if the cast is successful, or `null` if the cast fails.
      */
-    public open fun Message.Response.asAssistantMessageOrNull(): Message.Assistant?
+    override fun Message.Response.asAssistantMessageOrNull(): Message.Assistant? = this as? Message.Assistant
 
     /**
      * Casts the current instance of a [Message.Response] to a [Message.Assistant].
@@ -165,7 +169,7 @@ public expect open class AIAgentFunctionalContext internal constructor(
      *
      * @return The current instance cast to [Message.Assistant].
      */
-    public open fun Message.Response.asAssistantMessage(): Message.Assistant
+    override fun Message.Response.asAssistantMessage(): Message.Assistant = this as Message.Assistant
 
     /**
      * Invokes the provided action when multiple tool call messages are found within a given list of response messages.
@@ -174,10 +178,14 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param response A list of response messages to be checked for tool call messages.
      * @param action A lambda function to be executed with the list of filtered tool call messages, if any exist.
      */
-    public open fun onMultipleToolCalls(
+    override fun onMultipleToolCalls(
         response: List<Message.Response>,
         action: (List<Message.Tool.Call>) -> Unit
-    )
+    ) {
+        response.filterIsInstance<Message.Tool.Call>().takeIf { it.isNotEmpty() }?.let {
+            action(it)
+        }
+    }
 
     /**
      * Extracts a list of tool call messages from a given list of response messages.
@@ -185,9 +193,9 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param response A list of response messages to filter, potentially containing various types of responses.
      * @return A list of messages specifically representing tool calls, which are instances of [Message.Tool.Call].
      */
-    public open fun extractToolCalls(
+    override fun extractToolCalls(
         response: List<Message.Response>
-    ): List<Message.Tool.Call>
+    ): List<Message.Tool.Call> = response.filterIsInstance<Message.Tool.Call>()
 
     /**
      * Filters the provided list of response messages to include only assistant messages and,
@@ -196,17 +204,23 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param response A list of response messages to be processed. Only those of type `Message.Assistant` will be considered.
      * @param action A lambda function to execute on the list of assistant messages if the filtered list is not empty.
      */
-    public open fun onMultipleAssistantMessages(
+    override fun onMultipleAssistantMessages(
         response: List<Message.Response>,
         action: (List<Message.Assistant>) -> Unit
-    )
+    ) {
+        response.filterIsInstance<Message.Assistant>().takeIf { it.isNotEmpty() }?.let {
+            action(it)
+        }
+    }
 
     /**
      * Retrieves the latest token usage from the prompt within the LLM session.
      *
      * @return The latest token usage information as an integer.
      */
-    public open suspend fun latestTokenUsage(): Int
+    override suspend fun latestTokenUsage(): Int {
+        return llm.readSession { prompt.latestTokenUsage }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and requests structured data from the LLM with error correction capabilities.
@@ -218,11 +232,41 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param fixingModel LLM used for error correction.
      * @return Result containing the structured response if successful, or an error if parsing failed.
      */
-    public suspend inline fun <reified T> requestLLMStructured(
+    @PublishedApi
+    internal suspend inline fun <reified T> requestLLMStructuredImpl(
         message: String,
         examples: List<T> = emptyList(),
         fixingParser: StructureFixingParser? = null
-    ): Result<StructuredResponse<T>>
+    ): Result<StructuredResponse<T>> = requestLLMStructuredImpl(message, serializer<T>(), examples, fixingParser)
+
+    /**
+     * Sends a structured request to the language model (LLM) and processes the response.
+     *
+     * @param message The message or prompt to be sent to the LLM.
+     * @param serializer The serializer used to encode and decode the structured response.
+     * @param examples Optional examples provided to guide the LLM in generating the structured response. Default is an empty list.
+     * @param fixingParser An optional parser to fix or adjust the structure of the response. Default is null.
+     * @return A [Result] containing a [StructuredResponse] with the structured result or an error if the operation fails.
+     */
+    @PublishedApi
+    internal suspend fun <T> requestLLMStructuredImpl(
+        message: String,
+        serializer: KSerializer<T>,
+        examples: List<T> = emptyList(),
+        fixingParser: StructureFixingParser? = null
+    ): Result<StructuredResponse<T>> {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMStructured(
+                serializer,
+                examples,
+                fixingParser
+            )
+        }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and streams the LLM response.
@@ -232,10 +276,18 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param structureDefinition Optional structure to guide the LLM response.
      * @return A flow of [StreamFrame] objects from the LLM response.
      */
-    public open suspend fun requestLLMStreaming(
+    override suspend fun requestLLMStreaming(
         message: String,
-        structureDefinition: StructuredDataDefinition? = null
-    ): Flow<StreamFrame>
+        structureDefinition: StructuredDataDefinition?
+    ): Flow<StreamFrame> {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMStreaming(structureDefinition)
+        }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and gets multiple LLM responses with tool calls enabled.
@@ -244,7 +296,15 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param message The content of the message to be sent to the LLM.
      * @return A list of LLM responses.
      */
-    public open suspend fun requestLLMMultiple(message: String): List<Message.Response>
+    override suspend fun requestLLMMultiple(message: String): List<Message.Response> {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMMultiple()
+        }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) that will only call tools without generating text responses.
@@ -253,7 +313,15 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param message The content of the message to be sent to the LLM.
      * @return The LLM response containing tool calls.
      */
-    public open suspend fun requestLLMOnlyCallingTools(message: String): Message.Response
+    override suspend fun requestLLMOnlyCallingTools(message: String): Message.Response {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMOnlyCallingTools()
+        }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and forces it to use a specific tool.
@@ -263,10 +331,18 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param tool The tool descriptor that the LLM must use.
      * @return The LLM response containing the tool call.
      */
-    public open suspend fun requestLLMForceOneTool(
+    override suspend fun requestLLMForceOneTool(
         message: String,
         tool: ToolDescriptor
-    ): Message.Response
+    ): Message.Response {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMForceOneTool(tool)
+        }
+    }
 
     /**
      * Sends a message to a Large Language Model (LLM) and forces it to use a specific tool.
@@ -276,10 +352,18 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param tool The tool that the LLM must use.
      * @return The LLM response containing the tool call.
      */
-    public open suspend fun requestLLMForceOneTool(
+    override suspend fun requestLLMForceOneTool(
         message: String,
         tool: Tool<*, *>
-    ): Message.Response
+    ): Message.Response {
+        return llm.writeSession {
+            updatePrompt {
+                user(message)
+            }
+
+            requestLLMForceOneTool(tool)
+        }
+    }
 
     /**
      * Executes a tool call and returns the result.
@@ -287,7 +371,9 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param toolCall The tool call to execute.
      * @return The result of the tool execution.
      */
-    public open suspend fun executeTool(toolCall: Message.Tool.Call): ReceivedToolResult
+    override suspend fun executeTool(toolCall: Message.Tool.Call): ReceivedToolResult {
+        return environment.executeTool(toolCall)
+    }
 
     /**
      * Executes multiple tool calls and returns their results.
@@ -297,10 +383,16 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param parallelTools Specifies whether tools should be executed in parallel, defaults to false.
      * @return A list of results from the executed tool calls.
      */
-    public open suspend fun executeMultipleTools(
+    override suspend fun executeMultipleTools(
         toolCalls: List<Message.Tool.Call>,
-        parallelTools: Boolean = false
-    ): List<ReceivedToolResult>
+        parallelTools: Boolean
+    ): List<ReceivedToolResult> {
+        return if (parallelTools) {
+            environment.executeTools(toolCalls)
+        } else {
+            toolCalls.map { environment.executeTool(it) }
+        }
+    }
 
     /**
      * Adds a tool result to the prompt and requests an LLM response.
@@ -308,7 +400,17 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param toolResult The tool result to add to the prompt.
      * @return The LLM response.
      */
-    public open suspend fun sendToolResult(toolResult: ReceivedToolResult): Message.Response
+    override suspend fun sendToolResult(toolResult: ReceivedToolResult): Message.Response {
+        return llm.writeSession {
+            updatePrompt {
+                tool {
+                    result(toolResult)
+                }
+            }
+
+            requestLLM()
+        }
+    }
 
     /**
      * Adds multiple tool results to the prompt and gets multiple LLM responses.
@@ -316,9 +418,19 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param results The list of tool results to add to the prompt.
      * @return A list of LLM responses.
      */
-    public open suspend fun sendMultipleToolResults(
+    override suspend fun sendMultipleToolResults(
         results: List<ReceivedToolResult>
-    ): List<Message.Response>
+    ): List<Message.Response> {
+        return llm.writeSession {
+            updatePrompt {
+                tool {
+                    results.forEach { result(it) }
+                }
+            }
+
+            requestLLMMultiple()
+        }
+    }
 
     /**
      * Calls a specific tool directly using the provided arguments.
@@ -328,11 +440,36 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param doUpdatePrompt Specifies whether to add tool call details to the prompt.
      * @return The result of the tool execution.
      */
-    public open suspend fun <ToolArg, TResult> executeSingleTool(
+    public override suspend fun <ToolArg, TResult> executeSingleTool(
         tool: Tool<ToolArg, TResult>,
         toolArgs: ToolArg,
-        doUpdatePrompt: Boolean = true
-    ): SafeTool.Result<TResult>
+        doUpdatePrompt: Boolean
+    ): SafeTool.Result<TResult> {
+        return llm.writeSession {
+            if (doUpdatePrompt) {
+                updatePrompt {
+                    user(
+                        "Tool call: ${tool.name} was explicitly called with args: ${
+                            tool.encodeArgs(toolArgs)
+                        }"
+                    )
+                }
+            }
+
+            val toolResult = findTool(tool).execute(toolArgs)
+
+            if (doUpdatePrompt) {
+                updatePrompt {
+                    user(
+                        "Tool call: ${tool.name} was explicitly called and returned result: ${
+                            toolResult.content
+                        }"
+                    )
+                }
+            }
+            toolResult
+        }
+    }
 
     /**
      * Compresses the current LLM prompt (message history) into a summary, replacing messages with a TLDR.
@@ -342,9 +479,13 @@ public expect open class AIAgentFunctionalContext internal constructor(
      * @param preserveMemory Specifies whether to retain message memory after compression.
      * @return The input value, unchanged.
      */
-    public open suspend fun compressHistory(
-        strategy: HistoryCompressionStrategy = HistoryCompressionStrategy.WholeHistory,
-        preserveMemory: Boolean = true
-    )
+    override suspend fun compressHistory(
+        strategy: HistoryCompressionStrategy,
+        preserveMemory: Boolean
+    ) {
+        llm.writeSession {
+            replaceHistoryWithTLDR(strategy, preserveMemory)
+        }
+    }
 
 }

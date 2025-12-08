@@ -18,7 +18,7 @@ import ai.koog.agents.core.agent.entity.AIAgentStrategy
  * @property func A suspending function representing the loop logic for the strategy. It accepts
  * input data of type [TInput] and an [ai.koog.agents.core.agent.context.AIAgentFunctionalContext] to execute the loop and produce the output.
  */
-public expect interface AIAgentFunctionalStrategy<TInput, TOutput> :
+public interface AIAgentFunctionalStrategy<TInput, TOutput> :
     AIAgentStrategy<TInput, TOutput, AIAgentFunctionalContext> {
     override suspend fun execute(
         context: AIAgentFunctionalContext,

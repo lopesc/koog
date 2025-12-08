@@ -4,28 +4,23 @@ package ai.koog.agents.core.agent
 
 import ai.koog.agents.annotations.JavaAPI
 import ai.koog.agents.core.agent.config.AIAgentConfig
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.utils.asCoroutineContext
+import ai.koog.agents.core.utils.runOnMainDispatcher
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.utils.io.Closeable
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
-import kotlin.coroutines.CoroutineContext
 import kotlin.uuid.ExperimentalUuidApi
-import ai.koog.agents.core.utils.asCoroutineContext
 
 @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 public actual abstract class AIAgent<Input, Output> : Closeable {
     public actual abstract val id: String
-    public actual abstract val agentConfig: AIAgentConfigBase
+    public actual abstract val agentConfig: AIAgentConfig
 
     // JAVA Unique methods:
 
@@ -42,7 +37,7 @@ public actual abstract class AIAgent<Input, Output> : Closeable {
     public final fun run(
         agentInput: Input,
         executorService: ExecutorService? = null
-    ): Output = runBlocking(executorService.asCoroutineContext()) { run(agentInput) }
+    ): Output = agentConfig.runOnMainDispatcher(executorService) { run(agentInput) }
 
     /**
      * Retrieves the current state of the AI agent asynchronously.
@@ -62,8 +57,7 @@ public actual abstract class AIAgent<Input, Output> : Closeable {
     @JvmOverloads
     public final fun getState(
         executorService: ExecutorService? = null,
-    ): CompletableFuture<AIAgentState<Output>> =
-        CoroutineScope(executorService.asCoroutineContext()).future { getState() }
+    ): AIAgentState<Output> = agentConfig.runOnMainDispatcher(executorService) { getState() }
 
     // Common (multiplatform) methods:
 

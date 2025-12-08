@@ -1,18 +1,14 @@
+@file:Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+
 package ai.koog.agents.core.agent
 
-import ai.koog.agents.core.agent.AIAgentState.NotStarted
 import ai.koog.agents.core.agent.context.AIAgentContext
-import ai.koog.agents.core.agent.context.element.AgentRunInfoContextElement
 import ai.koog.agents.core.agent.entity.AIAgentStrategy
 import ai.koog.agents.core.feature.AIAgentFeature
 import ai.koog.agents.core.feature.pipeline.AIAgentPipeline
 import io.github.oshai.kotlinlogging.KLogger
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 /**
  * Abstract base class representing a single-use AI agent with state.
@@ -30,22 +26,18 @@ import kotlin.uuid.Uuid
  * @param id the unique identifier for the agent. Random UUID will be generated if set to null.
  */
 @OptIn(ExperimentalUuidApi::class)
-public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgentContext>(
-    protected val logger: KLogger,
+public expect abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgentContext> constructor(
+    logger: KLogger,
     id: String? = null,
-) : AIAgent<Input, Output>() {
+) : AIAgent<Input, Output> {
     /**
-     * A mutex used to synchronize access to the state of the agent. Ensures that only one coroutine
-     * can modify or read the shared state of the agent at a time, preventing data races and ensuring
-     * thread-safe operations.
+     * Logger instance used for logging messages and events specific to this agent.
      */
-    private val agentStateMutex: Mutex = Mutex()
+    protected open val logger: KLogger
 
-    private var state: AIAgentState<Output> = NotStarted()
+    override suspend fun getState(): AIAgentState<Output>
 
-    final override suspend fun getState(): AIAgentState<Output> = agentStateMutex.withLock { state.copy() }
-
-    final override val id: String by lazy { id ?: Uuid.random().toString() }
+    override val id: String
 
     /**
      * The execution strategy defining how the agent processes input and produces output.
@@ -74,85 +66,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
      * @throws IllegalStateException if the agent was already started.
      * @throws Throwable if any exception occurs during the execution process.
      */
-    final override suspend fun run(agentInput: Input): Output {
-        agentStateMutex.withLock {
-            if (state !is NotStarted) {
-                throw IllegalStateException(
-                    "Agent was already started. Please use AIAgentService.createAgentAndRun(agentInput) to run an agent multiple times."
-                )
-            }
-            state = AIAgentState.Starting()
-        }
-
-        val runId = Uuid.random().toString()
-
-        pipeline.prepareFeatures()
-
-        return withContext(
-            AgentRunInfoContextElement(
-                agentId = this@StatefulSingleUseAIAgent.id,
-                runId = runId,
-                agentConfig = agentConfig,
-                strategyName = strategy.name
-            )
-        ) {
-            val context = prepareContext(agentInput, runId)
-
-            agentStateMutex.withLock {
-                state = AIAgentState.Running(context)
-            }
-
-            logger.debug {
-                formatLog(
-                    agentId = this@StatefulSingleUseAIAgent.id,
-                    runId = runId,
-                    message = "Starting agent execution"
-                )
-            }
-
-            pipeline.onAgentStarting<Input, Output>(
-                runId = runId,
-                agent = this@StatefulSingleUseAIAgent,
-                context = context
-            )
-
-            val result = try {
-                strategy.execute(context = context, input = agentInput)
-            } catch (e: Throwable) {
-                logger.error(e) { "Execution exception reported by server!" }
-                pipeline.onAgentExecutionFailed(
-                    agentId = this@StatefulSingleUseAIAgent.id,
-                    runId = runId,
-                    throwable = e
-                )
-                agentStateMutex.withLock { state = AIAgentState.Failed(e) }
-                throw e
-            }
-
-            logger.debug {
-                formatLog(
-                    agentId = this@StatefulSingleUseAIAgent.id,
-                    runId = runId,
-                    message = "Finished agent execution"
-                )
-            }
-            pipeline.onAgentCompleted(
-                agentId = this@StatefulSingleUseAIAgent.id,
-                runId = runId,
-                result = result
-            )
-
-            agentStateMutex.withLock {
-                state = if (result != null) {
-                    AIAgentState.Finished(result)
-                } else {
-                    AIAgentState.Failed(Exception("result is null"))
-                }
-            }
-
-            return@withContext result ?: error("result is null")
-        }
-    }
+    override suspend fun run(agentInput: Input): Output
 
     /**
      * Closes the AI Agent and performs necessary cleanup operations.
@@ -163,10 +77,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
      *
      * Overrides the `close` method to implement agent-specific shutdown logic.
      */
-    final override suspend fun close() {
-        pipeline.onAgentClosing(agentId = this@StatefulSingleUseAIAgent.id)
-        pipeline.closeFeaturesStreamProviders()
-    }
+    override suspend fun close()
 
     /**
      * Prepares and initializes the agent context required to handle the given input and run ID.
@@ -186,10 +97,10 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
      * @return The feature associated with the provided key, or null if no matching feature is found.
      * @throws IllegalArgumentException if the specified [featureClass] does not correspond to a registered feature.
      */
-    public fun <TFeature : Any> feature(
+    public open fun <TFeature : Any> feature(
         featureClass: KClass<TFeature>,
         feature: AIAgentFeature<*, TFeature>
-    ): TFeature? = pipeline.feature(featureClass, feature)
+    ): TFeature?
 
     /**
      * Formats a log message with the specified agent ID, run ID, and message content.
@@ -199,8 +110,7 @@ public abstract class StatefulSingleUseAIAgent<Input, Output, TContext : AIAgent
      * @param message The content of the log message to be formatted.
      * @return A formatted log string containing the agent ID, run ID, and the provided message.
      */
-    protected fun formatLog(agentId: String, runId: String, message: String): String =
-        "[agent id: $agentId, run id: $runId] $message"
+    protected open fun formatLog(agentId: String, runId: String, message: String): String
 }
 
 /**

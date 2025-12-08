@@ -1,9 +1,7 @@
 package ai.koog.agents.core.agent.context.element
 
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
-import ai.koog.prompt.dsl.Prompt
+import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.llm.OllamaModels
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -67,10 +65,7 @@ class NodeInfoContextElementTest {
         val agentElement = AgentRunInfoContextElement(
             agentId = "test-agent",
             runId = "test-run",
-            agentConfig = object : AIAgentConfigBase {
-                override val prompt: Prompt = testPrompt
-                override val model: LLModel = testModel
-            },
+            agentConfig = AIAgentConfig(prompt = testPrompt, model = testModel, maxAgentIterations = 10),
             strategyName = "test-strategy"
         )
 

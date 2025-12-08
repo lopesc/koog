@@ -6,7 +6,6 @@ import ai.koog.agents.core.agent.AIAgentState.Finished
 import ai.koog.agents.core.agent.AIAgentState.Running
 import ai.koog.agents.core.agent.GraphAIAgent.FeatureContext
 import ai.koog.agents.core.agent.config.AIAgentConfig
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.prompt.dsl.prompt
@@ -30,7 +29,7 @@ public expect abstract class AIAgent<Input, Output> constructor() : Closeable {
     /**
      * The configuration for the AI agent.
      */
-    public abstract val agentConfig: AIAgentConfigBase
+    public abstract val agentConfig: AIAgentConfig
 
     /**
      * Retrieves the current state of the AI agent during its lifecycle.

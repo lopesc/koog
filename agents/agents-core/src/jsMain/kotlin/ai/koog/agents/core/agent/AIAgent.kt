@@ -3,7 +3,6 @@
 package ai.koog.agents.core.agent
 
 import ai.koog.agents.core.agent.config.AIAgentConfig
-import ai.koog.agents.core.agent.config.AIAgentConfigBase
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.prompt.executor.model.PromptExecutor
@@ -15,7 +14,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
 public actual abstract class AIAgent<Input, Output> : Closeable {
     public actual abstract val id: String
-    public actual abstract val agentConfig: AIAgentConfigBase
+    public actual abstract val agentConfig: AIAgentConfig
 
     public actual abstract suspend fun getState(): AIAgentState<Output>
 

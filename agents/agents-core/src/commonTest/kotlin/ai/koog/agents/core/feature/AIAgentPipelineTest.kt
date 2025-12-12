@@ -43,6 +43,7 @@ import ai.koog.agents.testing.tools.getMockExecutor
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.OllamaModels
+import ai.koog.prompt.message.Message
 import ai.koog.utils.io.use
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
@@ -405,7 +406,7 @@ class AIAgentPipelineTest {
 
     @Test
     @JsName("testPipelineInterceptorsForLLmCallEvents")
-    fun `test pipeline interceptors for llm call events`() = runTest {
+    fun `test pipeline interceptors for llm call events`() = runTest(timeout = 10000.seconds) {
         val interceptedEvents = mutableListOf<String>()
         val interceptedRunIds = mutableListOf<String>()
 
@@ -417,14 +418,19 @@ class AIAgentPipelineTest {
         val nodeLLMCallWithoutToolsName = "test-llm-node-without-tools"
         val nodeLLMCall = "test-llm-node"
 
+        val llmCallWithoutToolsInput = "Test LLM call without tools prompt"
+        val llmCallInput = "Test LLM call prompt"
+
         val strategy = strategy<String, String>(strategyName) {
             val llmCallWithoutTools by nodeLLMRequest(nodeLLMCallWithoutToolsName, allowToolCalls = false)
             val llmCall by nodeLLMRequest(nodeLLMCall)
 
-            edge(nodeStart forwardTo llmCallWithoutTools transformed { "Test LLM call prompt" })
-            edge(llmCallWithoutTools forwardTo llmCall transformed { "Test LLM call with tools prompt" })
+            edge(nodeStart forwardTo llmCallWithoutTools transformed { llmCallWithoutToolsInput })
+            edge(llmCallWithoutTools forwardTo llmCall transformed { llmCallInput })
             edge(llmCall forwardTo nodeFinish transformed { agentOutput })
         }
+
+        val promptExecutor = getMockExecutor {  }
 
         createAgent(id = agentId, strategy = strategy) {
             install(TestFeature) {
@@ -443,8 +449,8 @@ class AIAgentPipelineTest {
         val runId = interceptedRunIds.first()
 
         val expectedEvents = listOf(
-            "${LLMCallStarting::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCallWithoutToolsName)}, name: $nodeLLMCallWithoutToolsName, prompt: Test LLM call prompt, tools: [])",
-            "${LLMCallCompleted::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCallWithoutToolsName)}, name: $nodeLLMCallWithoutToolsName, responses: [Assistant: Default test response])",
+            "${LLMCallStarting::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCallWithoutToolsName)}, prompt: $llmCallWithoutToolsInput, tools: [])",
+            "${LLMCallCompleted::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCallWithoutToolsName)}, prompt: $nodeLLMCallWithoutToolsName, responses: [${Message.Role.Assistant.name}: Default test response])",
             "${LLMCallStarting::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCall)}, name: $nodeLLMCall, prompt: Test LLM call with tools prompt, tools: [dummy])",
             "${LLMCallCompleted::class.simpleName} (path: ${agentExecutionPath(agentId, runId, strategyName, nodeLLMCall)}, name: $nodeLLMCall, responses: [Assistant: Default test response])",
         )

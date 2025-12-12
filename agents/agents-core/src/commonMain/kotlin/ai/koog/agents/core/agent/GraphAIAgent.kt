@@ -132,25 +132,24 @@ public open class GraphAIAgent<Input, Output>(
             parentContext = null,
         )
 
-        // Update: Create a mutable reference that will be updated
-        lateinit var updatedAgentContext: AIAgentGraphContextBase
+        // Delegates
+        lateinit var agentContext: AIAgentGraphContextBase
 
+        val agentContextDelegate = object : AIAgentContext by initialAgentContext {
+            override var executionInfo: AgentExecutionInfo
+                get() = agentContext.executionInfo
+                set(value) { agentContext.executionInfo = value }
+        }
+
+        // Updated entities
         val contextualEnvironment = ContextualAgentEnvironment(
             environment = initialEnvironment,
-            context = object : AIAgentContext by initialAgentContext {
-                override var executionInfo: AgentExecutionInfo
-                    get() = updatedAgentContext.executionInfo
-                    set(value) { updatedAgentContext.executionInfo = value }
-            },
+            context = agentContextDelegate,
         )
 
         val contextualPromptExecutor = ContextualPromptExecutor(
             executor = promptExecutor,
-            context = object : AIAgentContext by initialAgentContext {
-                override var executionInfo: AgentExecutionInfo
-                    get() = updatedAgentContext.executionInfo
-                    set(value) { updatedAgentContext.executionInfo = value }
-            },
+            context = agentContextDelegate,
         )
 
         val updatedLLMContext = initialAgentContext.llm.copy(
@@ -158,13 +157,13 @@ public open class GraphAIAgent<Input, Output>(
             promptExecutor = contextualPromptExecutor,
         )
 
-        updatedAgentContext = initialAgentContext.copy(
+        agentContext = initialAgentContext.copy(
             llm = updatedLLMContext,
             environment = contextualEnvironment,
             parentContext = initialAgentContext.parentContext, // Keep the original parent context
         )
 
-        return updatedAgentContext
+        return agentContext
     }
 
     /**

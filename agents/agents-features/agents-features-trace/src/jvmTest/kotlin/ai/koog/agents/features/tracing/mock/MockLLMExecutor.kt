@@ -16,6 +16,10 @@ import kotlinx.datetime.Instant
 
 class MockLLMExecutor : PromptExecutor {
 
+    companion object {
+        const val DEFAULT_ASSISTANT_RESPONSE = "Default test response"
+    }
+
     private val clock: Clock = object : Clock {
         override fun now(): Instant = Instant.parse("2023-01-01T00:00:00Z")
     }
@@ -42,7 +46,7 @@ class MockLLMExecutor : PromptExecutor {
             )
         }
 
-        return Message.Assistant(content = "Default test response", ResponseMetaInfo.create(clock))
+        return Message.Assistant(content = DEFAULT_ASSISTANT_RESPONSE, ResponseMetaInfo.create(clock))
     }
 
     override suspend fun moderate(
